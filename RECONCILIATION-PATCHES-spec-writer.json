@@ -1,0 +1,79 @@
+{
+  "authored_by": "agent.specification_writer.v1",
+  "input": {
+    "requirements": [
+      {
+        "id": "NEED-FIELDID",
+        "statement": "Adopt ONE canonical fieldId = 'viz:field/{slug}', used identically by SAS (the viz:DataField @id), DKNP lexis keys, the Binder's schema AND lexis keys, and OCE roleBindings.fieldId -- so the structural, morphology, and binding channels align on the same field identity (today they use slug vs sourceIdentifier vs pointer)."
+      },
+      {
+        "id": "NEED-E2-KEYS",
+        "statement": "Reconcile the BIBSS->SAS typeDistribution key set: BIBSS emits keys null|boolean|integer|number|string; SAS additionally expects 'boolean-encoded-string', which BIBSS never produces. Choose one authoritative key set and assign who emits it."
+      },
+      {
+        "id": "NEED-E2-NULLCOUNT",
+        "statement": "Reconcile SAS reading a 'nullCount' field (which BIBSS does not have) against BIBSS providing typeDistribution.null (a count) + nullable (a boolean). Pick one."
+      },
+      {
+        "id": "NEED-E5-NAMING",
+        "statement": "Pin the Binder's proposedBinding to OCE's ProposedBinding exactly: fields recordConcept + roleBindings[{fieldId, role, relatumConcept}], and resolve the JSON-LD 'bind:' prefix vs OCE's plain field names so OCE consumes the binding without a transform."
+      }
+    ]
+  },
+  "spec": {
+    "requirements": [
+      {
+        "id": "FR-1",
+        "statement": "Every pipeline component SHALL identify each field using the single canonical token 'viz:field/{slug}', where {slug} is the URL-safe field name. Concretely: (a) SAS viz:DataField @id = 'viz:field/{slug}'; (b) DKNP SemanticTokenList sourceIdentifier = 'viz:field/{slug}', used as the lexis key passed to the Binder; (c) Binder BindInput schema keys and lexis keys = 'viz:field/{slug}'; (d) OCE ProposedBinding roleBindings[*].fieldId = 'viz:field/{slug}'. No component may use a bare slug, a JSON Pointer (RFC-6901 form), or any other field reference form at these integration seams.",
+        "acceptance": {
+          "criterion": "Integration test with a field whose slug is 'age': assert (a) SAS output contains @id='viz:field/age', (b) DKNP output contains sourceIdentifier='viz:field/age', (c) Binder BindInput schema has top-level key 'viz:field/age' and lexis has top-level key 'viz:field/age', (d) OCE-bound roleBindings entry has fieldId='viz:field/age'. Test also asserts the bare string 'age' does not appear as a field reference key in any serialized seam output.",
+          "check": "Automated integration test asserting fieldId='viz:field/{slug}' in each component's serialized output at each named seam; test fails on bare slug, JSON Pointer, or any other reference form."
+        },
+        "traces_to": [
+          "NEED-FIELDID"
+        ]
+      },
+      {
+        "id": "FR-2",
+        "statement": "BIBSS is the sole authoritative emitter of typeDistribution. The authoritative typeDistribution key set is exactly {'null','boolean','integer','number','string'}. BIBSS MUST NOT emit a 'boolean-encoded-string' key. SAS MUST NOT read or expect a 'boolean-encoded-string' key from BIBSS input; if SAS requires a boolean-encoded-string classification it MUST derive it internally from its own logic applied to the five BIBSS-supplied keys, and that derivation is internal to SAS and not part of the inter-component contract.",
+        "acceptance": {
+          "criterion": "BIBSS unit test: for any valid input dataset, assert typeDistribution keys are a strict subset of {'null','boolean','integer','number','string'} and the key 'boolean-encoded-string' is absent. SAS unit test: given a valid BIBSS payload containing only the five canonical keys (no 'boolean-encoded-string'), assert SAS processes the field without error, without skipping it, and without producing a null or undefined type classification.",
+          "check": "BIBSS unit test asserting typeDistribution key set equals the 5-key canonical set; SAS unit test with 5-key BIBSS payload asserting successful field classification with no 'boolean-encoded-string' in input."
+        },
+        "traces_to": [
+          "NEED-E2-KEYS"
+        ]
+      },
+      {
+        "id": "FR-3",
+        "statement": "SAS SHALL read the null observation count from typeDistribution['null'] (the integer count already present in BIBSS SchemaNode). SAS MUST NOT read a top-level 'nullCount' field from BIBSS output. BIBSS MUST NOT add a 'nullCount' field to SchemaNode. The existing BIBSS SchemaNode 'nullable' boolean field retains its current semantics (true iff at least one null was observed) and is not removed or renamed.",
+        "acceptance": {
+          "criterion": "Unit test: construct a BIBSS SchemaNode with typeDistribution={'null':7,'integer':93}, nullable=true, and no 'nullCount' key. Assert SAS computes null count = 7 by reading typeDistribution['null']. Assert SAS does not raise a missing-field or key-not-found error. Assert BIBSS SchemaNode serialization for this node contains no 'nullCount' key at the top level.",
+          "check": "SAS unit test asserting null count equals typeDistribution['null'] from the BIBSS payload; BIBSS serialization test asserting absence of any 'nullCount' key in SchemaNode output."
+        },
+        "traces_to": [
+          "NEED-E2-NULLCOUNT"
+        ]
+      },
+      {
+        "id": "FR-4",
+        "statement": "The Binder's BindingProposal.proposals[*].proposedBinding MUST be serialized as a plain JSON object with exactly the field names OCE expects: { \"recordConcept\": string, \"roleBindings\": [ { \"fieldId\": string, \"role\": string, \"relatumConcept\": string } ] }. No 'bind:' JSON-LD prefix or any other namespace prefix may appear in these property names. The Binder MUST NOT emit a JSON-LD @context block that would require expansion before OCE can read the plain names. OCE MUST be able to deserialize proposedBinding directly into its ProposedBinding struct without any prefix-stripping, JSON-LD expansion, or intermediate transform step.",
+        "acceptance": {
+          "criterion": "Binder unit test: assert proposedBinding top-level keys are exactly {'recordConcept','roleBindings'} (no 'bind:' prefix on any key). Assert each roleBindings entry has exactly the keys {'fieldId','role','relatumConcept'} with no prefix. Integration test: OCE receives a raw Binder BindingProposal payload and successfully populates its internal ProposedBinding struct (recordConcept and all roleBindings entries) without invoking any transform, prefix-strip, or JSON-LD processor; test asserts no error and correct field values.",
+          "check": "Binder unit test asserting exact plain key names in proposedBinding output; OCE integration test asserting direct no-transform consumption of Binder output with correct struct population."
+        },
+        "traces_to": [
+          "NEED-E5-NAMING"
+        ]
+      }
+    ]
+  },
+  "sa_gate": {
+    "tier": "S-A",
+    "status": "pass",
+    "ok": true,
+    "refusals": [],
+    "escalations": [],
+    "version": "spec_acceptance_sa_v1"
+  }
+}
