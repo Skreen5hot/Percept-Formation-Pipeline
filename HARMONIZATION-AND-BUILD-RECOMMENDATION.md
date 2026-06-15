@@ -40,7 +40,7 @@ DKNP; OCE needs the Binder's proposal. (Aaron added OCE on 2026-06-15, closing t
 
 | Spec | Ver | Maturity | Buildability | Internal deps | External deps (not in portfolio) |
 |---|---|---|---|---|---|
-| **SNP** | 1.3 Final | mature | **CLAIMED** | none | ECVE A.6/A.7 patterns — *bundled into SNP*, so no runtime dep |
+| **SNP** | 1.3 Final | mature | **PROVEN** (factory-built 2026-06-15: rules + parse + normalize, 35/35 pinned tests green; `normalize` imports rules+parse — real composition; ~$0.50) | none | ECVE A.6/A.7 patterns — *bundled into SNP*, so no runtime dep |
 | **DKNP** | 2.1 Normative | mature | **CLAIMED** | none | none |
 | **BIBSS** | 1.3 Draft | mature | **PROVEN** (the IntegratedAgent factory built this 71KB spec to 15/15 modules with a working `infer()`, contained+judged — published as BIBS2 / BIBSS3) | (SNP output shape, data-flow only) | none |
 | **SAS** | 2.0 + 2.1 addendum | mature (treat as ONE) | **CLAIMED** | BIBSS (CISM) | Fandaws (optional enrichment), SNP manifest (optional) |
@@ -91,18 +91,22 @@ DKNP; OCE needs the Binder's proposal. (Aaron added OCE on 2026-06-15, closing t
 
 ## 5. The path from CLAIMED to PROVEN (next steps, I-8)
 
-The recommendation above is **honest about its own confidence**: only BIBSS is PROVEN today. To make
-"buildable now" trustworthy for the rest, put each through the buildability gate (the factory's S-C):
-1. **SNP** first (mature, Final, self-contained, smallest) — the cleanest proof that the gate works on a
-   real external spec, converting SNP CLAIMED → PROVEN.
-2. **DKNP** next (independent, mature).
+The recommendation above is **honest about its own confidence**. To make "buildable now" trustworthy
+for the rest, put each through the buildability gate (the factory's S-C):
+1. ~~**SNP**~~ — **DONE (2026-06-15)**: built green under the loop (3 modules, 35/35 pinned tests, real
+   composition, ~$0.50). SNP is now PROVEN. **Method note for the rest:** build from the pinned
+   acceptance tests *without* `--architect` — the architect can author an internal interface that
+   conflicts with what the pinned tests pin (here it declared `stripCurrency -> {cleaned, artifacts}`
+   vs the test's `-> string`, deadlocking the developer at the judge gate). With pinned tests, the tests
+   are the contract; composition is carried by the plan scope + the no-reimplementation gate.
+2. **DKNP** next (independent, mature) — same method.
 3. **SAS** (after a BIBSS re-verify), against the Term Registry oracle.
 4. **Binder core** and **OCE core** with stubbed externals.
 As each is built green under containment, its row flips CLAIMED → PROVEN and the recommendation hardens
 from a reasoned read into a realized fact. The end-to-end (Phase 4) stays GATED — correctly — until the
 external law (Fandaws, W2Fuel/ontology/RCR) and ALS are supplied.
 
-**Bottom line:** a coherent, well-layered pipeline with no conflicts, one already-proven component
-(BIBSS), four more that read buildable and should be *proven* by building (SNP/DKNP/SAS, then the
+**Bottom line:** a coherent, well-layered pipeline with no conflicts, **two now-proven components
+(BIBSS, SNP)**, three more that read buildable and should be *proven* by building (DKNP/SAS, then the
 Binder/OCE cores), and a genuine end-to-end blocker that is external (the constitutive law + Fandaws +
 ALS), not a flaw in the specs.
