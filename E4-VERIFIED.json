@@ -1,0 +1,51 @@
+{
+  "seam": "E4",
+  "signals": {
+    "sa": "pass",
+    "sb": "ok",
+    "sc": "built",
+    "human_signed": true
+  },
+  "fr8_discharge": {
+    "gate": "approval",
+    "matched": true,
+    "by": "agent",
+    "ref": "Aaron",
+    "evidence": {
+      "form": "local-authority",
+      "authority": "Aaron"
+    },
+    "decision": "captures-intent",
+    "at": "2026-06-15"
+  },
+  "confidence": {
+    "level": "VERIFIED",
+    "version": "spec_confidence_v1",
+    "derivation": [
+      "sa->VERIFIED",
+      "sb->VERIFIED",
+      "sc->VERIFIED",
+      "human->VERIFIED"
+    ],
+    "binding": [
+      "human",
+      "sa",
+      "sb",
+      "sc"
+    ],
+    "ceilings": {
+      "sa": "VERIFIED",
+      "sb": "VERIFIED",
+      "sc": "VERIFIED",
+      "human": "VERIFIED"
+    }
+  },
+  "disposition": "VERIFIED",
+  "built_slice": [
+    "M1",
+    "M2",
+    "M3",
+    "M4"
+  ],
+  "sc_state": "built"
+}

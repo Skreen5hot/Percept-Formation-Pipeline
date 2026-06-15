@@ -7,9 +7,11 @@ Authored and gated **by the pipeline's agents**, like E3. This records the climb
 | **S-A** mechanical | well-formed + faithful | `agent.specification_writer.v1` | **PASS** — 4 reqs, all NEEDs covered, nothing invented |
 | **S-B** independent realization | a different participant can partition it | `agent.planner.v1` | **ok** — 4-module plan, first try (conformant) |
 | **S-C** scoped-slice build | the factory builds it green | developer agent + `CLIJudge`, Docker `--network=none` | **BUILT** — 4/4 modules, 25/25 tests, real composition |
-| **FR-8** human intent | the spec means what you intended | **you** | **pending** |
+| **FR-8** human intent | the spec means what you intended | **Aaron** | **SIGNED** (2026-06-15, `captures-intent`) |
 
-**Current disposition: GATED** (accepted). VERIFIED-eligible — only your FR-8 sign-off remains.
+**Current disposition: VERIFIED.** All four ceilings at VERIFIED. The FR-8 discharge (Composer
+`discharge/v1`, local-authority "Aaron", 2026-06-15) is recorded in `E4-VERIFIED.json`. The SAS->Binder
+structural-channel spec is closed at the strongest confidence tier.
 
 ## The decision the agent made
 **Option A (pass-through).** SAS derives and forwards the Binder-required structural fields from the BIBSS
