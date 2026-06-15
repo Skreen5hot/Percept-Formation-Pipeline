@@ -1,0 +1,109 @@
+{
+  "seam": "E4",
+  "authored_by": "agent.specification_writer.v1",
+  "input": {
+    "requirements": [
+      {
+        "id": "NEED-E4-CHANNEL",
+        "statement": "Decide and pin how the Binder's structural channel is fed: either (A) SAS PASSES THROUGH the structural evidence the Binder needs (typeDistribution, cardinality, a coded-identifier flag -- forwarded from the BIBSS CISM SAS already consumes), or (B) the Binder's structural channel RETARGETS to what SAS actually emits (viz:hasDataType, sas:structuralType, viz:consensusScore). Choose one, justify briefly, make it testable."
+      },
+      {
+        "id": "NEED-E4-CONTRACT",
+        "statement": "Define the exact per-field structural record the Binder reads at this seam under the chosen option: the field names, their types, and which are required. It must be a concrete object the Binder can consume with no missing-field error."
+      },
+      {
+        "id": "NEED-E4-FIELDID",
+        "statement": "Key the per-field structural record by the canonical fieldId 'viz:field/{slug}' (RECONCILIATION-PATCHES-R0.1 FR-1) -- NOT viz:fieldName -- so the structural channel aligns with the lexical channel (E3) and OCE on the same field identity."
+      },
+      {
+        "id": "NEED-E4-CARDINALITY",
+        "statement": "Resolve cardinality and the coded-identifier flag specifically: SAS today emits neither. State where each comes from under the chosen option (forwarded from CISM, derived by SAS, or dropped if the Binder retargets) so neither is left dangling."
+      }
+    ]
+  },
+  "spec": {
+    "requirements": [
+      {
+        "id": "FR-1",
+        "statement": "The E4 structural channel SHALL use Option A (pass-through): SAS SHALL derive and forward the Binder-required structural fields from the CISM data it already holds in memory (SchemaNode and SchemaEdge), emitting them alongside its own semantic fields in the per-field structural percept. Option B is rejected: viz:hasDataType, sas:structuralType, and viz:consensusScore do not carry typeDistribution (a 5-key numeric Record from CISM SchemaNode), cardinality, or a coded-identifier signal \u2014 all three would be irrecoverably absent under Option B, leaving the Binder contract unsatisfiable without upstream re-architecture.",
+        "acceptance": {
+          "criterion": "A SAS structural percept produced for a field whose CISM SchemaNode has a populated typeDistribution (e.g., {\"string\":0.9,\"number\":0.05,\"boolean\":0.0,\"null\":0.05,\"object\":0.0}) SHALL include that typeDistribution value verbatim in the emitted record, and the record SHALL pass the Binder's intake validation with no MissingFieldError on any of the four required fields (fieldId, typeDistribution, cardinality, isCodedIdentifier).",
+          "check": "Unit test: construct a mock CISM SchemaNode with a known 5-key typeDistribution; execute the SAS CISM-forwarding emit path; assert the resulting structural record's typeDistribution deep-equals the mock value and all four top-level required fields are present and non-null."
+        },
+        "traces_to": [
+          "NEED-E4-CHANNEL"
+        ]
+      },
+      {
+        "id": "FR-2",
+        "statement": "The E4 per-field structural record \u2014 the concrete typed object crossing the SAS->Binder seam \u2014 SHALL conform to the following schema with all fields required and no field optional: { fieldId: string, typeDistribution: Record<string,number> (the 5-key object from CISM SchemaNode.typeDistribution), cardinality: { nullable: boolean, required: boolean }, isCodedIdentifier: boolean }. The Binder SHALL raise a typed MissingFieldError that names the absent field whenever any of the four top-level fields or either cardinality sub-field is absent from a received record; it SHALL NOT silently default or coerce missing fields.",
+        "acceptance": {
+          "criterion": "Seven tests covering all absence variants: missing fieldId, missing typeDistribution, missing cardinality, missing cardinality.nullable, missing cardinality.required, missing isCodedIdentifier each produce a MissingFieldError whose message names the absent field; one test with all fields present and correctly typed produces no error and returns the record unchanged.",
+          "check": "Unit tests: parameterize the Binder intake validator over each of the seven variants; assert MissingFieldError is raised for each missing-field case and its error message contains the field name; assert the fully populated record passes validation without error."
+        },
+        "traces_to": [
+          "NEED-E4-CONTRACT"
+        ]
+      },
+      {
+        "id": "FR-3",
+        "statement": "The fieldId value in every E4 per-field structural record SHALL be the canonical URI 'viz:field/{slug}', copied verbatim from the '@id' property of the viz:DataField node SAS emitted for that field. The Binder SHALL perform all structural-to-lexical joins exclusively by fieldId string equality against E3 FieldLexis records; it SHALL NOT join on viz:fieldName, viz:hasDataType, or any other attribute.",
+        "acceptance": {
+          "criterion": "Given a SAS percept for a field with slug 'order_status', the structural record's fieldId equals the string 'viz:field/order_status'; the Binder matches it to a FieldLexis record carrying the same fieldId; given a structural record with fieldId='viz:field/order_status' and a FieldLexis record with fieldId='viz:field/order_date', the Binder produces no join and emits a diagnostic for the unmatched structural record.",
+          "check": "Integration test: emit one structural record and one FieldLexis record sharing fieldId='viz:field/order_status'; assert Binder joins them; emit a structural record with fieldId='viz:field/order_status' paired with a FieldLexis record with fieldId='viz:field/order_date'; assert no join is produced and a diagnostic is recorded."
+        },
+        "traces_to": [
+          "NEED-E4-FIELDID"
+        ]
+      },
+      {
+        "id": "FR-4",
+        "statement": "Cardinality and the coded-identifier flag SHALL be produced by SAS via the following pinned derivation from CISM and forwarded in the structural record \u2014 neither is inferred by the Binder from other signals and neither may be omitted: (a) cardinality.nullable SHALL equal SchemaNode.nullable (boolean) for the node whose id matches the field; (b) cardinality.required SHALL equal SchemaEdge.required (boolean) for the unique SchemaEdge whose target equals the SchemaNode.id, or false if no such edge exists in the CISM graph; (c) isCodedIdentifier SHALL be true if and only if SchemaNode.kind is a member of the pinned set { 'coded', 'identifier', 'coded-identifier' }, and SHALL be false for all other kind values including 'string', 'number', 'boolean', 'object', and 'enum'.",
+        "acceptance": {
+          "criterion": "Four combinatorial unit tests: (1) SchemaNode{nullable:true, kind:'coded'} + matching SchemaEdge{required:false} \u2192 record has cardinality={nullable:true,required:false} and isCodedIdentifier=true; (2) SchemaNode{nullable:false, kind:'string'} + SchemaEdge{required:true} \u2192 cardinality={nullable:false,required:true} and isCodedIdentifier=false; (3) SchemaNode{nullable:false, kind:'identifier'} with no matching SchemaEdge \u2192 cardinality={nullable:false,required:false} and isCodedIdentifier=true; (4) SchemaNode{nullable:true, kind:'enum'} + SchemaEdge{required:false} \u2192 isCodedIdentifier=false (kind not in pinned set).",
+          "check": "Unit tests: for each of the four cases, construct the CISM SchemaNode and SchemaEdge inputs, invoke the SAS CISM-forwarding derivation path, and assert the resulting structural record's cardinality and isCodedIdentifier fields exactly match the expected values; assert no test touches the Binder to confirm derivation is SAS-side only."
+        },
+        "traces_to": [
+          "NEED-E4-CARDINALITY",
+          "NEED-E4-CONTRACT"
+        ]
+      }
+    ]
+  },
+  "sa": {
+    "tier": "S-A",
+    "status": "pass",
+    "ok": true,
+    "refusals": [],
+    "escalations": [],
+    "version": "spec_acceptance_sa_v1"
+  },
+  "planner_plan": "## E4 Structural Channel \u2014 Module Plan\n\nThe spec defines a SAS\u2192Binder seam for per-field structural percepts. Four concerns are cleanly separable: shared types + error class, SAS derivation + emission, Binder intake validation, and Binder join logic.\n\n### Module breakdown\n\n**M1 `e4-types`** \u2014 Shared type definitions: `StructuralRecord` interface (all four required fields, cardinality sub-object) and `MissingFieldError` class that carries the absent-field name. No logic, no external deps. Everything else imports from here.\nCovers: FR-2 (schema + typed error)\n\n**M2 `sas-emitter`** \u2014 SAS pass-through emitter. Reads CISM `SchemaNode` and `SchemaEdge` already in memory; derives `cardinality.nullable` from `SchemaNode.nullable`, `cardinality.required` from the matching `SchemaEdge.required` (false if no edge), `isCodedIdentifier` from the pinned kind-set `{'coded','identifier','coded-identifier'}`, and sets `fieldId` to `'viz:field/{slug}'` copied from the emitted `viz:DataField @id`. Emits a complete `StructuralRecord`.\nCovers: FR-1, FR-3 (fieldId minting), FR-4 (all three derivations)\n\n**M3 `binder-validator`** \u2014 Binder intake guard. Receives any incoming object, checks presence of all four top-level fields and both cardinality sub-fields in declaration order; throws `MissingFieldError` naming the first absent field; returns the record unchanged when all fields present and correctly typed. Seven absence tests + one all-present test as specified.\nCovers: FR-2 (7+1 acceptance tests)\n\n**M4 `binder-joiner`** \u2014 Binder structural-to-lexical join. Matches `StructuralRecord.fieldId` to `FieldLexis.fieldId` by string equality only; no join on `viz:fieldName`, `viz:hasDataType`, or any other attribute; emits a diagnostic for unmatched structural records.\nCovers: FR-3 (join tests: match, miss, diagnostic)\n\n```modules\n[\n  {\n    \"id\": \"e4-types\",\n    \"files\": [\"src/e4/types.ts\", \"tests/e4/types.test.ts\"],\n    \"covers\": [\"FR-2\"]\n  },\n  {\n    \"id\": \"sas-emitter\",\n    \"files\": [\"src/e4/sas_emitter.ts\", \"tests/e4/sas_emitter.test.ts\"],\n    \"covers\": [\"FR-1\", \"FR-3\", \"FR-4\"],\n    \"depends_on\": [\"e4-types\"]\n  },\n  {\n    \"id\": \"binder-validator\",\n    \"files\": [\"src/e4/binder_validator.ts\", \"tests/e4/binder_validator.test.ts\"],\n    \"covers\": [\"FR-2\"],\n    \"depends_on\": [\"e4-types\"]\n  },\n  {\n    \"id\": \"binder-joiner\",\n    \"files\": [\"src/e4/binder_joiner.ts\", \"tests/e4/binder_joiner.test.ts\"],\n    \"covers\": [\"FR-3\"],\n    \"depends_on\": [\"binder-validator\", \"e4-types\"]\n  }\n]\n```",
+  "sb": {
+    "tier": "S-B",
+    "ok": true,
+    "refusals": [],
+    "roster_gaps": [],
+    "version": "spec_acceptance_sb_v1"
+  },
+  "confidence": {
+    "level": "GATED",
+    "version": "spec_confidence_v1",
+    "derivation": [
+      "sa->VERIFIED",
+      "sb->VERIFIED",
+      "sc->GATED",
+      "human->GATED"
+    ],
+    "binding": [
+      "human",
+      "sc"
+    ],
+    "ceilings": {
+      "sa": "VERIFIED",
+      "sb": "VERIFIED",
+      "sc": "GATED",
+      "human": "GATED"
+    }
+  }
+}

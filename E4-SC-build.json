@@ -1,0 +1,84 @@
+{
+  "seam": "E4",
+  "sa": {
+    "tier": "S-A",
+    "status": "pass",
+    "ok": true,
+    "refusals": [],
+    "escalations": [],
+    "version": "spec_acceptance_sa_v1"
+  },
+  "sb": {
+    "tier": "S-B",
+    "ok": true,
+    "refusals": [],
+    "roster_gaps": [],
+    "version": "spec_acceptance_sb_v1"
+  },
+  "auto_slice": [
+    "M1",
+    "M3",
+    "M4"
+  ],
+  "built_slice": [
+    "M1",
+    "M2",
+    "M3",
+    "M4"
+  ],
+  "sc_state": "built",
+  "sc_build": {
+    "built": true,
+    "run_state": "built",
+    "built_modules": [
+      "M1",
+      "M2",
+      "M3",
+      "M4"
+    ],
+    "stopped_at": null,
+    "units": [
+      {
+        "unit": "M1",
+        "gate": "accepted",
+        "exec": "passed",
+        "built": true,
+        "reason": null
+      },
+      {
+        "unit": "M2",
+        "gate": "accepted",
+        "exec": "passed",
+        "built": true,
+        "reason": null
+      },
+      {
+        "unit": "M3",
+        "gate": "accepted",
+        "exec": "passed",
+        "built": true,
+        "reason": null
+      },
+      {
+        "unit": "M4",
+        "gate": "accepted",
+        "exec": "passed",
+        "built": true,
+        "reason": null
+      }
+    ],
+    "grant": {
+      "kind": "build_grant",
+      "permission": "ex:AutonomousBuildPermission",
+      "authority": "Aaron",
+      "containment": "docker",
+      "authorized": [],
+      "accepted_unenforced": [],
+      "uncontained_disclosed": [],
+      "disclosure": "Containment provider: docker\n  - network: denial enforced\n  - filesystem: denial enforced\n  CONTAINED: every required denial is ENFORCED by the sandbox.",
+      "decision": "granted",
+      "hash": "sha256:1e24a14b4810073d080bf3145bed260e2e61606025c22ed249589dd703354af6"
+    }
+  },
+  "disposition": "GATED"
+}
