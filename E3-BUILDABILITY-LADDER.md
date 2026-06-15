@@ -8,10 +8,12 @@ records how far up the I-8 buildability ladder it climbed.
 | **S-A** mechanical | well-formed + faithful to the seam | `agent.specification_writer.v1` (`claude -p`) | **PASS** — 6 reqs, all NEEDs covered, nothing invented |
 | **S-B** independent realization | a *different* participant can partition it into a buildable plan | `agent.planner.v1` (`claude -p`) | **ok** — 4-module plan, capability has a bearer (after one gate→feedback→retry) |
 | **S-C** scoped-slice build | the factory actually builds it, green | `agent.developer` + `CLIJudge`, under Docker `--network=none` | **BUILT** — 4/4 modules, 26/26 tests, real composition |
-| **FR-8** human intent | the spec means what you intended | **you** | **pending** — caps the disposition at GATED |
+| **FR-8** human intent | the spec means what you intended | **Aaron** | **SIGNED** (2026-06-15, `captures-intent`) |
 
-**Current disposition: GATED** (accepted). VERIFIED-eligible — the only remaining gate is your FR-8
-intent sign-off (D-4: the human signs intent, not buildability).
+**Current disposition: VERIFIED.** All four ceilings at VERIFIED
+(`sa->VERIFIED sb->VERIFIED sc->VERIFIED human->VERIFIED`). The FR-8 discharge (Composer `discharge/v1`,
+local-authority "Aaron", 2026-06-15) is recorded in `E3-VERIFIED.json`. The DKNP->Binder seam spec is
+closed at the strongest confidence tier the factory issues.
 
 ## The S-C slice (what was built)
 
