@@ -50,9 +50,17 @@ DKNP; OCE needs the Binder's proposal. (Aaron added OCE on 2026-06-15, closing t
 
 ## 3. Harmonization findings
 
-- **Conflicts: NONE.** The portfolio is disciplined and cleanly layered — no two specs give contradictory
-  rules for the same thing. (Notable: this is the well-behaved case; the predicted conflict-detector
-  isn't the binding constraint here.)
+> **CORRECTION (2026-06-15):** this section originally read "Conflicts: NONE" and called the pipeline
+> cleanly composable. That was a *contradiction* check only. A proper **interface-reconciliation review
+> of the seams** (see `INTERFACE-RECONCILIATION.md`) found that the pipeline **does NOT compose
+> as-uploaded** — 4 of 5 producer→consumer seams have real mismatches (BIBSS→SAS typeDistribution keys +
+> nullCount; DKNP→Binder needs FieldLexis/morphology DKNP doesn't emit; SAS→Binder structural channel
+> under-fed; Binder→OCE field-naming unpinned), plus no shared `fieldId` across SAS/DKNP/Binder/OCE. The
+> components are individually buildable; the **seams need spec work**. See that doc for the per-seam diff
+> and the prioritized spec-work backlog.
+
+- **No CONTRADICTIONS** — no two specs give opposite rules for the same thing. But "no contradiction" is
+  not "composes": see the seam mismatches above (INTERFACE-RECONCILIATION.md).
 - **Overlaps (intentional, not faults):**
   - **SAS v2.0 vs v2.1-addendum** — the addendum closes 6 normative gaps (8-rule registry, `sas:activeConfig`,
     test cases T-15..T-22, invariants P-10/P-11). **Treat v2.0+v2.1 as a single spec**; building against
@@ -106,7 +114,8 @@ As each is built green under containment, its row flips CLAIMED → PROVEN and t
 from a reasoned read into a realized fact. The end-to-end (Phase 4) stays GATED — correctly — until the
 external law (Fandaws, W2Fuel/ontology/RCR) and ALS are supplied.
 
-**Bottom line:** a coherent, well-layered pipeline with no conflicts, **two now-proven components
+**Bottom line:** a coherent set of components with no contradictions but **interface seams that need
+reconciliation before they compose** (INTERFACE-RECONCILIATION.md), **two now-proven components
 (BIBSS, SNP)**, three more that read buildable and should be *proven* by building (DKNP/SAS, then the
 Binder/OCE cores), and a genuine end-to-end blocker that is external (the constitutive law + Fandaws +
 ALS), not a flaw in the specs.
