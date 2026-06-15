@@ -1,0 +1,42 @@
+{
+  "seam": "E3",
+  "sa": {
+    "tier": "S-A",
+    "status": "pass",
+    "ok": true,
+    "refusals": [],
+    "escalations": [],
+    "version": "spec_acceptance_sa_v1"
+  },
+  "planner_plan": "## Module Plan: FieldLexis / DknpBinderAdapter\n\n**Decomposition overview**\n\nFour modules, each independently buildable and testable. M1 defines the types, M2 the marker table, M3 the morphology function, and M4 the adapter \u2014 each has its own test file. FR-6's re-export requirement is satisfied by the adapter barrel-exporting everything from M1\u2013M3.\n\n---\n\n### M1 \u2014 FieldLexis & TypeMarker types\n\nDefines the `TypeMarker` discriminated union and the `FieldLexis` shape. TypeScript compile-error tests live here.\n\n**Files:** `src/types.ts`, `tests/types.test.ts`\n\n**Covers:** FR-1\n\n---\n\n### M2 \u2014 Marker lookup table\n\nExports the closed, enumerable marker map (`MARKER_TABLE: Record<string, TypeMarker>`) and a `lookupMarker(token: string): TypeMarker | undefined` helper.\n\n**Files:** `src/markers.ts`, `tests/markers.test.ts`\n\n**Covers:** FR-2\n\n**Depends on:** M1\n\n---\n\n### M3 \u2014 analyzeTokens morphology function\n\nPure function `analyzeTokens(tokens: string[]): FieldLexis` implementing the three-step algorithm: marker scan \u2192 head-noun selection \u2192 modifiers.\n\n**Files:** `src/analyze-tokens.ts`, `tests/analyze-tokens.test.ts`\n\n**Covers:** FR-3\n\n**Depends on:** M1, M2\n\n---\n\n### M4 \u2014 DknpBinderAdapter\n\nExports `assemble(...)` plus re-exports `FieldLexis`, `TypeMarker`, and `analyzeTokens` so the Binder imports everything from one surface. The DKNP tokenizer source is not touched. Doc comment on the adapter declares it the sole `FieldLexis` constructor.\n\n**Files:** `src/dknp-binder-adapter.ts`, `tests/dknp-binder-adapter.test.ts`\n\n**Covers:** FR-4, FR-5, FR-6\n\n**Depends on:** M1, M2, M3\n\n---\n\n```modules\n[\n  {\n    \"id\": \"M1\",\n    \"files\": [\"src/types.ts\", \"tests/types.test.ts\"],\n    \"covers\": [\"FR-1\"]\n  },\n  {\n    \"id\": \"M2\",\n    \"files\": [\"src/markers.ts\", \"tests/markers.test.ts\"],\n    \"covers\": [\"FR-2\"],\n    \"depends_on\": [\"M1\"]\n  },\n  {\n    \"id\": \"M3\",\n    \"files\": [\"src/analyze-tokens.ts\", \"tests/analyze-tokens.test.ts\"],\n    \"covers\": [\"FR-3\"],\n    \"depends_on\": [\"M1\", \"M2\"]\n  },\n  {\n    \"id\": \"M4\",\n    \"files\": [\"src/dknp-binder-adapter.ts\", \"tests/dknp-binder-adapter.test.ts\"],\n    \"covers\": [\"FR-4\", \"FR-5\", \"FR-6\"],\n    \"depends_on\": [\"M1\", \"M2\", \"M3\"]\n  }\n]\n```",
+  "sb": {
+    "tier": "S-B",
+    "ok": true,
+    "refusals": [],
+    "roster_gaps": [],
+    "version": "spec_acceptance_sb_v1"
+  },
+  "required_caps": [
+    "ex:CodeImplementationCapability"
+  ],
+  "confidence": {
+    "level": "GATED",
+    "version": "spec_confidence_v1",
+    "derivation": [
+      "sa->VERIFIED",
+      "sb->VERIFIED",
+      "sc->GATED",
+      "human->GATED"
+    ],
+    "binding": [
+      "human",
+      "sc"
+    ],
+    "ceilings": {
+      "sa": "VERIFIED",
+      "sb": "VERIFIED",
+      "sc": "GATED",
+      "human": "GATED"
+    }
+  }
+}
