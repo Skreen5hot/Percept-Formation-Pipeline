@@ -1,0 +1,107 @@
+{
+  "authored_by": "agent.specification_writer.v1",
+  "seam": "E3",
+  "input": {
+    "requirements": [
+      {
+        "id": "NEED-E3-FIELDLEXIS",
+        "statement": "Define the FieldLexis shape the Binder's lexical channel consumes per field: it must carry a head noun, modifiers, and type markers (e.g. an 'id'-marker => reference, a 'date'-marker => temporal). Specify every field, its type, and whether it is required."
+      },
+      {
+        "id": "NEED-E3-MORPHOLOGY",
+        "statement": "Specify the morphological analysis that turns a DKNP token list (a lowercase string[]) into a FieldLexis: how the head noun is chosen, how modifiers are separated from the head, and how type markers are detected from tokens. It must be deterministic and testable from a given token list."
+      },
+      {
+        "id": "NEED-E3-ASSEMBLY",
+        "statement": "Specify how per-identifier DKNP output (one SemanticTokenList per call) is assembled into the Binder's required lexis: Record<fieldId, FieldLexis>, keyed by the canonical fieldId 'viz:field/{slug}'. Cover per-field invocation/batching and the keying."
+      },
+      {
+        "id": "NEED-E3-SITING",
+        "statement": "Decide and pin WHERE the morphology lives: either (A) extend DKNP to emit FieldLexis directly in a field-keyed/batched mode, or (B) specify a separate DKNP->Binder adapter that derives FieldLexis from DKNP token output. Choose one, justify briefly, and make the choice testable (which component's output contains FieldLexis)."
+      }
+    ]
+  },
+  "spec": {
+    "requirements": [
+      {
+        "id": "FR-1",
+        "statement": "Define the FieldLexis shape as an object with the following fields: headNoun (string, required) \u2014 the primary noun extracted from the token list representing the core concept of the field; modifiers (string[], required) \u2014 zero or more adjective/qualifier tokens that are not the head noun and not type markers; typeMarkers (TypeMarker[], required) \u2014 zero or more detected semantic type annotations drawn from the defined marker set. TypeMarker is a discriminated union: { kind: 'reference' } | { kind: 'temporal' } | { kind: 'quantity' } | { kind: 'unknown', token: string }. No additional fields are permitted on FieldLexis.",
+        "acceptance": {
+          "criterion": "A TypeScript type-check test asserts that an object satisfying FieldLexis must have headNoun: string, modifiers: string[], and typeMarkers: TypeMarker[] and that omitting any of the three fields is a compile error. A runtime unit test constructs a valid FieldLexis and asserts all three fields are present and correctly typed.",
+          "check": "tsc --noEmit on a fixture file that constructs valid and invalid FieldLexis objects; Jest/Vitest unit test asserting field presence and array types on a constructed value."
+        },
+        "traces_to": [
+          "NEED-E3-FIELDLEXIS"
+        ]
+      },
+      {
+        "id": "FR-2",
+        "statement": "Define the complete marker-detection token set: the token string 'id' maps to { kind: 'reference' }; any of 'date', 'time', 'at', 'on' maps to { kind: 'temporal' }; any of 'count', 'num', 'total', 'qty' maps to { kind: 'quantity' }. Any other token does not produce a TypeMarker. The marker set is exhaustive and closed \u2014 no token produces a TypeMarker unless it appears in this table. The mapping must be expressed as a lookup table (plain object or Map) in source code so it is enumerable and testable.",
+        "acceptance": {
+          "criterion": "Unit tests supply each token in the table and assert the correct TypeMarker kind is returned; supply at least two tokens NOT in the table and assert no TypeMarker is emitted. The lookup table itself is exported so tests can iterate its keys.",
+          "check": "Jest/Vitest parameterized tests iterating { token, expectedKind } pairs for every entry in the exported lookup table plus at least two negative cases."
+        },
+        "traces_to": [
+          "NEED-E3-FIELDLEXIS",
+          "NEED-E3-MORPHOLOGY"
+        ]
+      },
+      {
+        "id": "FR-3",
+        "statement": "Specify the morphological analysis function analyzeTokens(tokens: string[]): FieldLexis as follows. Step 1 \u2014 marker scan: iterate tokens; for each token present in the marker lookup table (FR-2), record the corresponding TypeMarker. Step 2 \u2014 head-noun selection: the head noun is the LAST token in the tokens array that is NOT a marker token (i.e., not present in the marker lookup table). If no such token exists (all tokens are markers or the array is empty), the head noun is the last token regardless. Step 3 \u2014 modifiers: all tokens that are neither the selected head noun nor marker tokens, taken in their original order, become modifiers. The function is pure and deterministic: given the same tokens array it always returns the same FieldLexis.",
+        "acceptance": {
+          "criterion": "Unit tests supply a fixed tokens array and assert the exact { headNoun, modifiers, typeMarkers } returned. Tests cover: (a) a mixed array with one marker, (b) an array with multiple markers, (c) an array with no markers, (d) an array where every token is a marker, (e) an empty array. Each test asserts the complete returned object, not just one field.",
+          "check": "Jest/Vitest unit tests with inline expected-value assertions for each of the five cases described; all tests must pass deterministically with no random or async behavior."
+        },
+        "traces_to": [
+          "NEED-E3-MORPHOLOGY"
+        ]
+      },
+      {
+        "id": "FR-4",
+        "statement": "Choose option (B): a separate adapter component named DknpBinderAdapter is responsible for assembling per-field DKNP output into the Binder's required lexis map. DKNP is NOT modified; it continues to emit SemanticTokenList one identifier at a time. Justification: DKNP's contract is tokenization only; adding FieldLexis assembly to it conflates two responsibilities and would require DKNP to know about the Binder's shape. The adapter is the correct seam-crossing component.",
+        "acceptance": {
+          "criterion": "The source file for DknpBinderAdapter exists in the repository and exports the adapter. No changes to the DKNP tokenizer source file are present in the same commit. A documentation comment on DknpBinderAdapter states it is the sole component that produces FieldLexis values. A grep/search for FieldLexis construction in the DKNP tokenizer source returns zero matches.",
+          "check": "File-system assertion that DknpBinderAdapter source exists; grep of the DKNP tokenizer source file for 'FieldLexis' returns empty; DKNP tokenizer source diff shows no net changes."
+        },
+        "traces_to": [
+          "NEED-E3-SITING"
+        ]
+      },
+      {
+        "id": "FR-5",
+        "statement": "Specify the DknpBinderAdapter.assemble(fields: Array<{ fieldId: string, sourceIdentifier: string }>, invokeDknp: (sourceIdentifier: string) => SemanticTokenList): Record<string, FieldLexis> function. For each entry in fields: (1) call invokeDknp(sourceIdentifier) to obtain a SemanticTokenList; (2) call analyzeTokens(semanticTokenList.tokens) to obtain a FieldLexis; (3) record the result keyed by fieldId. The returned object contains exactly one entry per input field. The fieldId values passed in must conform to the canonical pattern 'viz:field/{slug}' (FR-1 of RECONCILIATION-PATCHES-R0.1); the adapter does not recompute or transform fieldId \u2014 it uses the value supplied. Fields are processed independently; no batching or ordering dependency is introduced.",
+        "acceptance": {
+          "criterion": "Unit tests supply a mock invokeDknp that returns a controlled SemanticTokenList for each sourceIdentifier and assert: (a) the returned Record has exactly the same number of keys as the input fields array; (b) each key matches its corresponding fieldId from the input; (c) the FieldLexis at each key matches the expected output of analyzeTokens for the tokens returned by the mock. An integration test supplies two fields with fieldIds in 'viz:field/{slug}' format and verifies both entries are present and correctly structured.",
+          "check": "Jest/Vitest unit tests with mock invokeDknp; parameterized assertions on returned Record key count, key names, and FieldLexis structure. Integration test with two real-format fieldIds verifying end-to-end shape."
+        },
+        "traces_to": [
+          "NEED-E3-ASSEMBLY",
+          "NEED-E3-SITING"
+        ]
+      },
+      {
+        "id": "FR-6",
+        "statement": "The DknpBinderAdapter module must export its FieldLexis type, TypeMarker type, and the analyzeTokens function in addition to the assemble function, so that the Binder and any other consumer can import types and the morphology function directly without duplicating definitions. All four exports must appear in the module's public API surface.",
+        "acceptance": {
+          "criterion": "A TypeScript import test imports { FieldLexis, TypeMarker, analyzeTokens, assemble } (or DknpBinderAdapter.assemble) from the adapter module and uses each in a type annotation or function call without a compile error. tsc --noEmit must pass on this import test file.",
+          "check": "tsc --noEmit on a fixture file that imports and uses all four exported symbols from the adapter module."
+        },
+        "traces_to": [
+          "NEED-E3-FIELDLEXIS",
+          "NEED-E3-MORPHOLOGY",
+          "NEED-E3-ASSEMBLY",
+          "NEED-E3-SITING"
+        ]
+      }
+    ]
+  },
+  "sa_gate": {
+    "tier": "S-A",
+    "status": "pass",
+    "ok": true,
+    "refusals": [],
+    "escalations": [],
+    "version": "spec_acceptance_sa_v1"
+  }
+}
