@@ -69,10 +69,23 @@ DKNP; OCE needs the Binder's proposal. (Aaron added OCE on 2026-06-15, closing t
     BIBSS gets clean input. Harmless.
 - **Gaps (external dependencies the END-TO-END pipeline needs; each holds the full pipeline at GATED,
   but does NOT block building the components in isolation with stubs):**
-  - **Fandaws** (terminology + frame retrieval) — SAS (optional) and Binder (lexical channel) consume it.
-  - **W2Fuel + ontology/RCR** (the compiled constitutive law) — OCE and Binder's frameFit channel consume it.
+  - **Fandaws** — *NOT a hard blocker, and NOT a service.* **CORRECTION (2026-06-16):** the earlier
+    framing overstated this. Per the SAS spec, **SAS is never blocked by Fandaws** — it runs standalone on
+    static rules and degrades gracefully (§2.5: "SAS never fails because Fandaws is absent"); Fandaws is an
+    *optional* enrichment (§4.3). And Fandaws *as the pipeline consumes it* is a **read-only query
+    interface over caller-loaded, immutable, in-memory data** (§2.1 "does not make network requests";
+    §2.2 "deterministic graph traversals over immutable scope data") — three methods: `resolveTerm`,
+    `getConcept`, `resolveValue`. So the "Fandaws dependency" is just **(a) a static `ontology.ttl`** (the
+    TBox; for the Binder, frames = concepts + constitutive role-slots) **+ (b) a small `FandawsScope`
+    adapter** doing graph traversals over it — both buildable by the factory, no Fandaws product required.
+    The Binder's lexical channel needs the data populated; SAS needs nothing.
+  - **W2Fuel + ontology/RCR** (the compiled constitutive law) — OCE and Binder's frameFit channel consume
+    it. *This is the real harder external:* not a TBox to point at but **compiled rules** (OWL 2 RL + RCR)
+    — the adjudication law. Stubbable for the cores; the trustworthy end-to-end run needs the real law.
   - **ALS** (assertion layer, post-OCE) — the pipeline's terminal stage; out of this portfolio.
   - ECVE — *not* a gap at runtime (its patterns are bundled into SNP).
+  - **Net:** the genuine end-to-end blockers are the **constitutive law (W2Fuel/ontology/RCR) + ALS** —
+    NOT Fandaws (a static ontology + adapter) and NOT SAS (works standalone).
 
 ## 4. Build recommendation (confidence-tiered, phased)
 
