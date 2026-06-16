@@ -1,0 +1,9 @@
+{
+  "_comment": "A tiny illustrative scope so the adapter runs standalone. The real PFP scope is baked from an APQC PCF catalog (.ttl) by bake_pcf_scope.py -- see README.",
+  "codedValuePredicate": "http://example.org/apqc#pcfID",
+  "concepts": [
+    {"id": "c:Driver", "primaryLabel": "Driver", "alternateLabels": ["Operator", "Pilot"], "broader": ["c:Agent"], "codedValues": ["DRV", "OPR"]},
+    {"id": "c:Agent", "primaryLabel": "Agent", "alternateLabels": [], "broader": [], "codedValues": []},
+    {"id": "c:Vehicle", "primaryLabel": "Vehicle", "alternateLabels": [], "broader": [], "codedValues": []}
+  ]
+}
