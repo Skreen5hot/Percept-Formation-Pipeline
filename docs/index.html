@@ -88,8 +88,8 @@ td{padding:.2rem .5rem;border-bottom:1px solid #21262d;color:#8b949e}
 <div class="dag-node" id="dag-snp">SNP<span class="nb built">Built</span></div>
 <div class="dag-arr">&rarr;</div>
 <div class="dag-node" id="dag-bibss">BIBSS<span class="nb built">Built</span></div>
-<div class="dag-arr"><span id="dag-stop">&#9888; STOP</span>&rarr;</div>
-<div class="dag-node" id="dag-sas">SAS<span class="nb nybilt">Not Yet Built</span></div>
+<div class="dag-arr">&rarr;</div>
+<div class="dag-node" id="dag-sas">SAS<span class="nb built">Built</span></div>
 </div>
 <div class="dag-feeder-row">
 <div class="dag-node" id="dag-dknp">DKNP<span class="nb nybilt">Not Yet Built</span></div>
@@ -99,6 +99,7 @@ td{padding:.2rem .5rem;border-bottom:1px solid #21262d;color:#8b949e}
 <div class="dag-band">
 <div class="dag-band-label">Synthesis</div>
 <div class="dag-row">
+<div class="dag-arr"><span id="dag-stop">&#9888; STOP</span></div>
 <div class="dag-node" id="dag-binder">Binder<span class="nb nybilt">Not Yet Built</span></div>
 <div class="dag-arr">&rarr;</div>
 <div class="dag-node" id="dag-oce">OCE<span class="nb nybilt">Not Yet Built</span></div>
@@ -124,17 +125,17 @@ td{padding:.2rem .5rem;border-bottom:1px solid #21262d;color:#8b949e}
 <summary>BIBSS &mdash; Brain-in-the-Box Schema Service<span class="badge idle" id="badge-bibss">idle</span></summary>
 <div class="panel-body" id="body-bibss"></div>
 </details>
-<details id="panel-sas">
-<summary>SAS &mdash; Schema Alignment Service<span class="badge gate-b" id="badge-sas">Gate</span></summary>
-<div class="panel-body" id="body-sas"><p class="gate">Gate &mdash; not built. Data stops here.</p></div>
+<details id="panel-sas" open>
+<summary>SAS &mdash; Schema Alignment Service<span class="badge idle" id="badge-sas">idle</span></summary>
+<div class="panel-body" id="body-sas"></div>
 </details>
 <details id="panel-binder">
 <summary>Binder &mdash; Semantic Binder (SFB)<span class="badge gate-b" id="badge-binder">Gate</span></summary>
-<div class="panel-body" id="body-binder"><p class="gate">Not reached &mdash; upstream gate at SAS.</p></div>
+<div class="panel-body" id="body-binder"><p class="gate">Gate &mdash; Binder not built. Data stops here.</p></div>
 </details>
 <details id="panel-oce">
 <summary>OCE &mdash; Ontological Constraint Engine<span class="badge gate-b" id="badge-oce">Gate</span></summary>
-<div class="panel-body" id="body-oce"><p class="gate">Not reached &mdash; upstream gate at SAS. (When reachable, OCE depends on the W2Fuel-compiled constitutive law: ontology + RCR.)</p></div>
+<div class="panel-body" id="body-oce"><p class="gate">Not reached &mdash; upstream gate at Binder. (When reachable, OCE depends on the W2Fuel-compiled constitutive law: ontology + RCR.)</p></div>
 </details>
 
 <h2>Parallel Feeder</h2>

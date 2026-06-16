@@ -2,7 +2,7 @@ import { run } from './runner.js';
 import { SAMPLE_CSV } from './sample.js';
 
 const $ = (id) => document.getElementById(id);
-const BUILT = ['snp', 'bibss', 'fandaws'];
+const BUILT = ['snp', 'bibss', 'sas', 'fandaws'];
 const ALL = ['snp', 'bibss', 'sas', 'binder', 'oce', 'dknp', 'fandaws'];
 const TYPES = ['null', 'boolean', 'integer', 'number', 'string'];
 const EMDASH = String.fromCharCode(0x2014);  // em-dash, ASCII-safe source -> no mojibake
@@ -65,6 +65,27 @@ const callbacks = {
       body.innerHTML = '';
       body.appendChild(table(['Field', 'Primitive Type', 'Null %', 'Boolean %', 'Integer %', 'Number %', 'String %', 'Nullable'], rows));
       body.appendChild(note('Schema Edges: structural object->property edges; not semantic field relationships.', 'edge-note'));
+    } else if (id === 'sas') {
+      dagClass('sas', 'done'); setBadge('sas', 'Done', 'done-b');
+      const schema = st.schema || {};
+      const fields = schema['viz:hasField'] || [];
+      const tlabel = (iri) => String(iri || '').replace('viz:', '').replace('Type', '');
+      body.innerHTML = '';
+      body.appendChild(note('alignmentMode: ' + (schema['sas:alignmentMode'] || '') + ' ' + EMDASH + ' '
+        + fields.length + ' fields, ' + (schema['viz:totalRows'] ?? '?')
+        + ' rows. Standalone: Fandaws is a consulted resource, not consulted here.'));
+      body.appendChild(table(['Field', 'Semantic Type', 'Alignment Rule', 'Consensus', 'Structural'],
+        fields.map((f) => [
+          f['viz:fieldName'],
+          tlabel(f['viz:hasDataType'] && f['viz:hasDataType']['@id'])
+            + (f['viz:numericPrecision'] ? ' (' + f['viz:numericPrecision'] + ')' : ''),
+          f['sas:alignmentRule'],
+          f['viz:consensusScore'],
+          f['sas:structuralType'],
+        ])));
+      const diags = st.diagnostics || [];
+      if (diags.length) body.appendChild(note('diagnostics: '
+        + diags.map((d) => d.code + (d.field ? ':' + d.field : '')).join(', '), 'edge-note'));
     } else if (id === 'fandaws') {
       dagClass('fandaws', 'done'); setBadge('fandaws', 'Done', 'done-b');
       const bind = st.binding || { rows: [], bound: 0, total: 0, field: '' };
@@ -80,9 +101,8 @@ const callbacks = {
 async function execute(raw) {
   clearState();
   const result = await run(raw, callbacks);
-  // the built chain runs SNP -> BIBSS -> (Fandaws consulted), then the pipeline stops at the SAS gate
-  if (result.stages.fandaws && result.stages.fandaws.status === 'done') {
-    dagClass('sas', 'stopped');
+  // the built chain runs SNP -> BIBSS -> SAS (Fandaws consulted), then the pipeline stops at the Binder gate
+  if (result.stages.sas && result.stages.sas.status === 'done') {
     const stop = $('dag-stop'); if (stop) stop.style.display = 'inline';
   }
 }
