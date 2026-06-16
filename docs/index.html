@@ -131,11 +131,11 @@ td{padding:.2rem .5rem;border-bottom:1px solid #21262d;color:#8b949e}
 </details>
 <details id="panel-binder">
 <summary>Binder &mdash; Semantic Binder (SFB)<span class="badge gate-b" id="badge-binder">Gate</span></summary>
-<div class="panel-body" id="body-binder"><p class="gate">Gate &mdash; Binder not built. Data stops here.</p></div>
+<div class="panel-body" id="body-binder"><p class="gate">Gate &mdash; the synthesis band (Binder + OCE) waits on one shared artifact: the compiled constitutive law (W2Fuel: ontology + RCR). The Binder fallibly proposes that the rows fall under a conceptual <em>frame</em> and assigns each column a role in it &mdash; those frames live in that law, so without it there is nothing to bind against. Data stops here.</p></div>
 </details>
 <details id="panel-oce">
 <summary>OCE &mdash; Ontological Constraint Engine<span class="badge gate-b" id="badge-oce">Gate</span></summary>
-<div class="panel-body" id="body-oce"><p class="gate">Not reached &mdash; upstream gate at Binder. (When reachable, OCE depends on the W2Fuel-compiled constitutive law: ontology + RCR.)</p></div>
+<div class="panel-body" id="body-oce"><p class="gate">Not reached &mdash; same gate as the Binder. OCE deterministically adjudicates a concept's constitutive <em>necessity</em> against the bound percept, and that necessity <em>is</em> the compiled constitutive law (W2Fuel: ontology + RCR) &mdash; the very artifact the Binder needs for its frames. The synthesis band gates on it as a pair, not as two independent stages.</p></div>
 </details>
 
 <h2>Parallel Feeder</h2>

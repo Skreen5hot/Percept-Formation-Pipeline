@@ -73,7 +73,8 @@ const callbacks = {
       body.innerHTML = '';
       body.appendChild(note('alignmentMode: ' + (schema['sas:alignmentMode'] || '') + ' ' + EMDASH + ' '
         + fields.length + ' fields, ' + (schema['viz:totalRows'] ?? '?')
-        + ' rows. Standalone: Fandaws is a consulted resource, not consulted here.'));
+        + ' rows. Standalone: SAS aligned from BIBSS structure alone, without consulting Fandaws '
+        + EMDASH + ' the Fandaws binding shown below is a separate consulted-resource illustration.'));
       body.appendChild(table(['Field', 'Semantic Type', 'Alignment Rule', 'Consensus', 'Structural'],
         fields.map((f) => [
           f['viz:fieldName'],
