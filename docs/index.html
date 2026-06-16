@@ -4,20 +4,32 @@
 <meta charset="UTF-8">
 <title>Percept-Formation-Pipeline</title>
 <style>
-body { font-family: sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
-h1 { border-bottom: 2px solid #333; padding-bottom: 0.5rem; }
-table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
-th, td { border: 1px solid #ccc; padding: 0.5rem 1rem; text-align: left; }
-th { background: #f0f0f0; }
-.banner { padding: 1rem; border-radius: 4px; margin: 1rem 0; }
-.banner.status { background: #ffe0e0; border: 1px solid #c00; }
-</style>
+    body { font-family: sans-serif; max-width: 960px; margin: 0 auto; padding: 1rem 2rem; }
+    h1 { color: #1a1a2e; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 1.5rem; }
+    th, td { border: 1px solid #ccc; padding: 0.4rem 0.8rem; text-align: left; }
+    th { background: #f0f0f0; }
+    .status-banner { padding: 1rem; margin-bottom: 1.5rem; border-radius: 4px; }
+  </style>
 </head>
 <body>
 <h1>Percept-Formation-Pipeline</h1><p>A percept-formation data pipeline: raw input refined into structural then semantic types, fallibly bound, then deterministically adjudicated.</p>
-<div class="diagram"><div class="main-pipeline">raw -> SNP -> BIBSS -> SAS -> Binder -> OCE -> ALS</div><div class="parallel-branch"><span class="parallel">parallel branch: DKNP -> Binder</span></div></div>
-<table><tr><th>Component</th><th>Buildability Status</th></tr><tr><td>SNP</td><td>PROVEN</td></tr><tr><td>BIBSS</td><td>PROVEN</td></tr><tr><td>SAS</td><td>CLAIMED</td></tr><tr><td>Binder-core</td><td>CLAIMED</td></tr><tr><td>OCE-core</td><td>CLAIMED</td></tr><tr><td>DKNP</td><td>CLAIMED</td></tr></table>
+<div class="status-banner" style="background:#ffe0e0;padding:1em;margin:1em 0;border:2px solid #c00">
+  <strong>GATED end-to-end</strong>
+  <p>Blockers: <strong>COMPILED CONSTITUTIVE LAW</strong> — the following are REQUIRED for trustworthy end-to-end execution:
+  <ul>
+    <li>W2Fuel</li>
+    <li>ontology/RCR</li>
+    <li>OWL 2 RL rules</li>
+    <li>ALS</li>
+  </ul>
+  </p>
+  <p>Fandaws is NOT a blocker — it is a static ontology + adapter (fandaws-scope, built).</p>
+  <p>SAS is NOT a blocker — it runs standalone (graceful degradation).</p>
+</div>
+<div class="pipeline">raw -> SNP -> BIBSS -> SAS -> Binder -> OCE -> ALS<div class="parallel-branch">parallel: DKNP -> Binder</div></div>
+<table><tr><th>Component</th><th>Status</th></tr><tr><td>SNP</td><td>PROVEN</td></tr><tr><td>BIBSS</td><td>PROVEN</td></tr><tr><td>SAS</td><td>CLAIMED</td></tr><tr><td>Binder-core</td><td>CLAIMED</td></tr><tr><td>OCE-core</td><td>CLAIMED</td></tr><tr><td>DKNP</td><td>CLAIMED</td></tr></table>
 <table><tr><th>Seam</th><th>Interface</th><th>Reconciliation Tier</th></tr><tr><td>E1</td><td>SNP->BIBSS</td><td>compatible</td></tr><tr><td>E3</td><td>DKNP->Binder</td><td>VERIFIED</td></tr><tr><td>E4</td><td>SAS->Binder</td><td>VERIFIED</td></tr><tr><td>R0.1</td><td>fieldId, E2, E5</td><td>GATED</td></tr></table>
-<div class="banner status"><span class="status-text">BLOCKED</span>: <span class="dep">Fandaws</span>, <span class="dep">W2Fuel</span>, <span class="dep">ontology/RCR</span>, <span class="dep">ALS</span></div>
+<table><thead><tr><th>Dependency</th><th>Kind</th><th>Status</th></tr></thead><tbody><tr><td>Fandaws</td><td>static ontology + adapter (fandaws-scope)</td><td>BUILT; not a service</td></tr><tr><td>W2Fuel + ontology/RCR</td><td>compiled constitutive law (OWL 2 RL rules)</td><td>REQUIRED for trustworthy end-to-end</td></tr><tr><td>ALS</td><td>terminal assertion layer</td><td>REQUIRED</td></tr></tbody></table>
 </body>
 </html>
