@@ -1,35 +1,146 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Percept-Formation-Pipeline</title>
 <style>
-    body { font-family: sans-serif; max-width: 960px; margin: 0 auto; padding: 1rem 2rem; }
-    h1 { color: #1a1a2e; }
-    table { border-collapse: collapse; width: 100%; margin-bottom: 1.5rem; }
-    th, td { border: 1px solid #ccc; padding: 0.4rem 0.8rem; text-align: left; }
-    th { background: #f0f0f0; }
-    .status-banner { padding: 1rem; margin-bottom: 1.5rem; border-radius: 4px; }
-  </style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#0d1117;color:#c9d1d9;min-height:100vh;padding:1.5rem 2rem;line-height:1.5}
+header{margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid #21262d}
+h1{font-size:1.5rem;font-weight:700;color:#e6edf3}
+header p{margin-top:.25rem;font-size:.9rem;color:#8b949e}
+.input-panel{background:#161b22;border:1px solid #21262d;border-radius:8px;padding:1rem;margin-bottom:1.5rem;max-width:680px}
+.tabs{display:flex;border-bottom:1px solid #21262d;margin-bottom:.75rem}
+.tab{padding:.4rem 1rem;cursor:pointer;font-size:.85rem;color:#8b949e;border:none;background:none;border-bottom:2px solid transparent;font-family:inherit}
+.tab.active{color:#58a6ff;border-bottom-color:#58a6ff}
+.tab-pane{display:none}
+.tab-pane.active{display:block}
+#adhoc-text{display:block;width:100%;min-height:80px;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#c9d1d9;padding:.5rem;font-family:monospace;font-size:.85rem;resize:vertical;margin-bottom:.5rem}
+.btn{background:#238636;color:#fff;border:none;border-radius:6px;padding:.4rem 1rem;font-size:.875rem;cursor:pointer;font-weight:500;font-family:inherit}
+.btn:hover{background:#2ea043}
+.dag-section{background:#161b22;border:1px solid #21262d;border-radius:8px;padding:1.25rem;margin-bottom:1.5rem;max-width:920px}
+.dag-wrapper{display:flex;gap:1.25rem;align-items:flex-start}
+.dag-bands{flex:1;display:flex;flex-direction:column;gap:.75rem}
+.dag-band{border:1px solid #30363d;border-radius:6px;padding:.75rem 1rem}
+.dag-band-label{font-size:.63rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#6e7681;margin-bottom:.7rem}
+.dag-row{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+.dag-feeder-row{display:flex;align-items:center;gap:.5rem;margin-top:.55rem}
+.dag-node{display:flex;flex-direction:column;align-items:center;gap:.2rem;background:#21262d;border:1.5px solid #30363d;border-radius:6px;padding:.4rem .65rem;font-size:.78rem;font-weight:600;color:#e6edf3;min-width:70px;text-align:center;transition:border-color .2s,background .2s}
+.dag-node.running{border-color:#388bfd;background:#0e1e36;animation:pn 1.2s ease-in-out infinite}
+.dag-node.done{border-color:#3fb950;background:#0b1c10}
+.dag-node.stopped{border-color:#da3633;background:#1e0c0c}
+@keyframes pn{0%,100%{border-color:#388bfd}50%{border-color:#79c0ff}}
+.nb{font-size:.6rem;font-weight:500;padding:.1rem .3rem;border-radius:3px;text-transform:uppercase;letter-spacing:.04em}
+.nb.built{background:#0d2016;color:#3fb950;border:1px solid #1a3c22}
+.nb.nybilt{background:#191e26;color:#6e7681;border:1px solid #30363d}
+.dag-arr{color:#6e7681;font-size:1rem;display:flex;align-items:center;position:relative;padding:0 .1rem}
+.fl{color:#6e7681;font-size:.73rem;font-family:monospace;white-space:nowrap}
+#dag-stop{display:none;color:#f85149;font-size:.62rem;background:#2d0f0f;border:1px solid #da3633;border-radius:3px;padding:.1rem .3rem;position:absolute;top:-1.25rem;left:50%;transform:translateX(-50%);white-space:nowrap;pointer-events:none}
+.dag-scope{font-size:.75rem;color:#6e7681;margin-top:.5rem;font-style:italic}
+.dag-consulted{border:1px dashed #30363d;border-radius:6px;padding:.75rem;min-width:148px;background:#11151c;display:flex;flex-direction:column;align-items:center;gap:.4rem}
+.dag-consulted-title{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#6e7681}
+.dag-consulted-note{font-size:.63rem;color:#6e7681;line-height:1.4;font-style:italic;text-align:center}
+.panels-section{max-width:920px}
+.panels-section h2{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#6e7681;margin-bottom:.75rem}
+details{background:#161b22;border:1px solid #21262d;border-radius:6px;margin-bottom:.4rem;overflow:hidden}
+details summary{display:flex;align-items:center;gap:.5rem;padding:.5rem .875rem;cursor:pointer;list-style:none;font-size:.85rem;font-weight:500;color:#c9d1d9;user-select:none}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"\25B6";font-size:.58rem;color:#6e7681;flex-shrink:0;transition:transform .15s}
+details[open] summary::before{transform:rotate(90deg)}
+.badge{font-size:.67rem;padding:.12rem .4rem;border-radius:3px;font-weight:600;letter-spacing:.04em;margin-left:auto;flex-shrink:0}
+.idle{background:#21262d;color:#6e7681}
+.running-b{background:#0e1e36;color:#79c0ff}
+.done-b{background:#0b1c10;color:#3fb950}
+.stopped-b{background:#1e0c0c;color:#f85149}
+.panel-body{padding:.65rem .875rem;border-top:1px solid #21262d;font-size:.85rem;color:#8b949e}
+.panel-body p+p{margin-top:.35rem}
+.gate{font-style:italic;color:#4b5158}
+</style>
 </head>
 <body>
-<h1>Percept-Formation-Pipeline</h1><p>A percept-formation data pipeline: raw input refined into structural then semantic types, fallibly bound, then deterministically adjudicated.</p>
-<div class="status-banner" style="background:#ffe0e0;padding:1em;margin:1em 0;border:2px solid #c00">
-  <strong>GATED end-to-end</strong>
-  <p>Blockers: <strong>COMPILED CONSTITUTIVE LAW</strong> — the following are REQUIRED for trustworthy end-to-end execution:
-  <ul>
-    <li>W2Fuel</li>
-    <li>ontology/RCR</li>
-    <li>OWL 2 RL rules</li>
-    <li>ALS</li>
-  </ul>
-  </p>
-  <p>Fandaws is NOT a blocker — it is a static ontology + adapter (fandaws-scope, built).</p>
-  <p>SAS is NOT a blocker — it runs standalone (graceful degradation).</p>
+<header>
+<h1>Percept-Formation-Pipeline</h1>
+<p>Staged pipeline from raw sense-data through ontology-grounded binding to open-class entity percepts.</p>
+</header>
+<section class="input-panel">
+<div class="tabs">
+<button class="tab active" id="tab-sample">Sample</button>
+<button class="tab" id="tab-adhoc">Ad-hoc</button>
 </div>
-<div class="pipeline">raw -> SNP -> BIBSS -> SAS -> Binder -> OCE -> ALS<div class="parallel-branch">parallel: DKNP -> Binder</div></div>
-<table><tr><th>Component</th><th>Status</th></tr><tr><td>SNP</td><td>PROVEN</td></tr><tr><td>BIBSS</td><td>PROVEN</td></tr><tr><td>SAS</td><td>CLAIMED</td></tr><tr><td>Binder-core</td><td>CLAIMED</td></tr><tr><td>OCE-core</td><td>CLAIMED</td></tr><tr><td>DKNP</td><td>CLAIMED</td></tr></table>
-<table><tr><th>Seam</th><th>Interface</th><th>Reconciliation Tier</th></tr><tr><td>E1</td><td>SNP->BIBSS</td><td>compatible</td></tr><tr><td>E3</td><td>DKNP->Binder</td><td>VERIFIED</td></tr><tr><td>E4</td><td>SAS->Binder</td><td>VERIFIED</td></tr><tr><td>R0.1</td><td>fieldId, E2, E5</td><td>GATED</td></tr></table>
-<table><thead><tr><th>Dependency</th><th>Kind</th><th>Status</th></tr></thead><tbody><tr><td>Fandaws</td><td>static ontology + adapter (fandaws-scope)</td><td>BUILT; not a service</td></tr><tr><td>W2Fuel + ontology/RCR</td><td>compiled constitutive law (OWL 2 RL rules)</td><td>REQUIRED for trustworthy end-to-end</td></tr><tr><td>ALS</td><td>terminal assertion layer</td><td>REQUIRED</td></tr></tbody></table>
+<div id="pane-sample" class="tab-pane active">
+<button class="btn" id="btn-sample">Load Sample &amp; Run</button>
+</div>
+<div id="pane-adhoc" class="tab-pane">
+<textarea id="adhoc-text" placeholder="Enter input text for the pipeline..."></textarea>
+<button class="btn" id="btn-run">Ad-hoc Run</button>
+</div>
+</section>
+<section class="dag-section">
+<div class="dag-wrapper">
+<div class="dag-bands">
+<div class="dag-band">
+<div class="dag-band-label">Percept Formation</div>
+<div class="dag-row">
+<div class="dag-node" id="dag-snp">SNP<span class="nb built">Built</span></div>
+<div class="dag-arr">&rarr;</div>
+<div class="dag-node" id="dag-bibss">BIBSS<span class="nb built">Built</span></div>
+<div class="dag-arr"><span id="dag-stop">&#9632; STOP</span>&rarr;</div>
+<div class="dag-node" id="dag-sas">SAS<span class="nb nybilt">Not Yet Built</span></div>
+</div>
+<div class="dag-feeder-row">
+<div class="dag-node" id="dag-dknp">DKNP<span class="nb nybilt">Not Yet Built</span></div>
+<span class="fl">&mdash;&mdash; feeder &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&rarr; Binder</span>
+</div>
+</div>
+<div class="dag-band">
+<div class="dag-band-label">Synthesis</div>
+<div class="dag-row">
+<div class="dag-node" id="dag-binder">Binder<span class="nb nybilt">Not Yet Built</span></div>
+<div class="dag-arr">&rarr;</div>
+<div class="dag-node" id="dag-oce">OCE<span class="nb nybilt">Not Yet Built</span></div>
+</div>
+</div>
+<p class="dag-scope">ALS and downstream are out of scope.</p>
+</div>
+<div class="dag-consulted">
+<div class="dag-consulted-title">Consulted Resource</div>
+<div class="dag-node" id="dag-fandaws">Fandaws<span class="nb built">Built</span></div>
+<p class="dag-consulted-note">consulted, not an inline stage; presentational simplification</p>
+</div>
+</div>
+</section>
+<section class="panels-section">
+<h2>Stage Output</h2>
+<details id="panel-snp">
+<summary>SNP &mdash; Sense-data Normalization &amp; Parsing<span class="badge idle" id="badge-snp">idle</span></summary>
+<div class="panel-body" id="body-snp"><p>Awaiting run.</p></div>
+</details>
+<details id="panel-bibss">
+<summary>BIBSS &mdash; Background-Informed Binding Seed Selection<span class="badge idle" id="badge-bibss">idle</span></summary>
+<div class="panel-body" id="body-bibss"><p>Awaiting run.</p></div>
+</details>
+<details id="panel-sas">
+<summary>SAS &mdash; Semantic Annotation &amp; Scoring<span class="badge idle" id="badge-sas">idle</span></summary>
+<div class="panel-body" id="body-sas"><p class="gate">Gate &mdash; not built.</p></div>
+</details>
+<details id="panel-dknp">
+<summary>DKNP &mdash; Domain Knowledge &amp; Ontology Projection<span class="badge idle" id="badge-dknp">idle</span></summary>
+<div class="panel-body" id="body-dknp"><p class="gate">Gate &mdash; not built.</p></div>
+</details>
+<details id="panel-fandaws">
+<summary>Fandaws &mdash; APQC PCF Ontology Adapter<span class="badge idle" id="badge-fandaws">idle</span></summary>
+<div class="panel-body" id="body-fandaws"><p>Awaiting run.</p></div>
+</details>
+<details id="panel-binder">
+<summary>Binder &mdash; Ontology-Grounded Entity Binding<span class="badge idle" id="badge-binder">idle</span></summary>
+<div class="panel-body" id="body-binder"><p class="gate">Gate &mdash; not built.</p></div>
+</details>
+<details id="panel-oce">
+<summary>OCE &mdash; Open-Class Entity Synthesis<span class="badge idle" id="badge-oce">idle</span></summary>
+<div class="panel-body" id="body-oce"><p class="gate">Gate &mdash; not built.</p><p>Constitutive law compiled from W2Fuel + ontology/RCR. ALS is out of scope.</p></div>
+</details>
+</section>
+<script type="module" src="./js/ui.js"></script>
 </body>
 </html>
