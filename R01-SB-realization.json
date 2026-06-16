@@ -1,0 +1,39 @@
+{
+  "seam": "R0.1-cheap-wins",
+  "sa": {
+    "tier": "S-A",
+    "status": "pass",
+    "ok": true,
+    "refusals": [],
+    "escalations": [],
+    "version": "spec_acceptance_sa_v1"
+  },
+  "planner_plan": "## Module plan\n\n**M1 \u2014 BIBSS type-distribution contract**\nEnforce the canonical five-key set in SchemaNode; strip any emission of `boolean-encoded-string` or `nullCount`. This is the authoritative data contract that SAS and M2 depend on.\n\n**M2 \u2014 SAS null-count and type-classification reads**\nWire SAS to read `typeDistribution['null']` for the null count (not `nullCount`), and derive `boolean-encoded-string` internally when needed. Depends on M1's fixed SchemaNode shape.\n\n**M3 \u2014 Canonical `viz:field/{slug}` token**\nIntroduce a shared `field_token` utility and thread `viz:field/{slug}` through all four seam points: SAS `DataField @id`, DKNP `sourceIdentifier`, Binder `BindInput` schema+lexis keys, OCE `roleBindings[*].fieldId`. Depends on M2 (SAS is already partially touched).\n\n**M4 \u2014 Binder plain-JSON proposal serialization**\nRemove any `bind:` JSON-LD prefix and `@context` block from `BindingProposal.proposals[*].proposedBinding`; emit plain keys `{recordConcept, roleBindings[{fieldId, role, relatumConcept}]}` directly. Depends on M3 (fieldId token is settled).\n\n**M5 \u2014 Integration tests**\nEnd-to-end seam assertions for FR-1 (`viz:field/age` round-trip, bare slug absent) and FR-4 (OCE deserializes raw Binder payload without any transform). Depends on M3 and M4.\n\n```modules\n[\n  {\n    \"id\": \"M1\",\n    \"files\": [\n      \"bibss/schema_node.py\",\n      \"tests/test_bibss_type_distribution.py\"\n    ],\n    \"covers\": [\"FR-2\", \"FR-3\"]\n  },\n  {\n    \"id\": \"M2\",\n    \"files\": [\n      \"sas/field_classifier.py\",\n      \"tests/test_sas_type_classification.py\"\n    ],\n    \"covers\": [\"FR-2\", \"FR-3\"],\n    \"depends_on\": [\"M1\"]\n  },\n  {\n    \"id\": \"M3\",\n    \"files\": [\n      \"common/field_token.py\",\n      \"sas/data_field.py\",\n      \"dknp/semantic_token.py\",\n      \"binder/bind_input.py\",\n      \"oce/proposed_binding.py\",\n      \"tests/test_field_token_unit.py\"\n    ],\n    \"covers\": [\"FR-1\"],\n    \"depends_on\": [\"M2\"]\n  },\n  {\n    \"id\": \"M4\",\n    \"files\": [\n      \"binder/binding_proposal.py\",\n      \"tests/test_binder_plain_json.py\"\n    ],\n    \"covers\": [\"FR-4\"],\n    \"depends_on\": [\"M3\"]\n  },\n  {\n    \"id\": \"M5\",\n    \"files\": [\n      \"tests/test_integration_field_token.py\",\n      \"tests/test_integration_binder_oce.py\"\n    ],\n    \"covers\": [\"FR-1\", \"FR-4\"],\n    \"depends_on\": [\"M3\", \"M4\"]\n  }\n]\n```",
+  "sb": {
+    "tier": "S-B",
+    "ok": true,
+    "refusals": [],
+    "roster_gaps": [],
+    "version": "spec_acceptance_sb_v1"
+  },
+  "confidence": {
+    "level": "GATED",
+    "version": "spec_confidence_v1",
+    "derivation": [
+      "sa->VERIFIED",
+      "sb->VERIFIED",
+      "sc->GATED",
+      "human->GATED"
+    ],
+    "binding": [
+      "human",
+      "sc"
+    ],
+    "ceilings": {
+      "sa": "VERIFIED",
+      "sb": "VERIFIED",
+      "sc": "GATED",
+      "human": "GATED"
+    }
+  }
+}
