@@ -1,6 +1,6 @@
 import { normalize } from './snp.js';
 import { infer as bibssInfer } from './bibss.js';
-import { init as fandawsInit, bindFields } from './fandaws.js';
+import { init as fandawsInit, bindRows } from './fandaws.js';
 
 export async function run(rawInput, callbacks = {}) {
   const { onStageStart, onStageDone } = callbacks;
@@ -54,9 +54,8 @@ export async function run(rawInput, callbacks = {}) {
 
   onStageStart?.('fandaws');
   await fandawsInit();
-  const fields = Object.keys(displayRecords[0] ?? {});
-  const fandawsResult = bindFields(displayRecords, fields);
-  stages.fandaws = { status: 'done', bindings: fandawsResult };
+  const fandawsResult = bindRows(displayRecords);   // per-row binding on the primary label field
+  stages.fandaws = { status: 'done', binding: fandawsResult };
   onStageDone?.('fandaws', stages.fandaws);
   lastBuiltStageReached = 'fandaws';
 

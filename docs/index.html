@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Percept-Formation-Pipeline</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -14,23 +14,21 @@ header p{margin-top:.25rem;font-size:.9rem;color:#8b949e}
 .tabs{display:flex;border-bottom:1px solid #21262d;margin-bottom:.75rem}
 .tab{padding:.4rem 1rem;cursor:pointer;font-size:.85rem;color:#8b949e;border:none;background:none;border-bottom:2px solid transparent;font-family:inherit}
 .tab.active{color:#58a6ff;border-bottom-color:#58a6ff}
-.tab-pane{display:none}
-.tab-pane.active{display:block}
+.tab-pane{display:none}.tab-pane.active{display:block}
 #adhoc-text{display:block;width:100%;min-height:80px;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#c9d1d9;padding:.5rem;font-family:monospace;font-size:.85rem;resize:vertical;margin-bottom:.5rem}
 .btn{background:#238636;color:#fff;border:none;border-radius:6px;padding:.4rem 1rem;font-size:.875rem;cursor:pointer;font-weight:500;font-family:inherit}
 .btn:hover{background:#2ea043}
 .dag-section{background:#161b22;border:1px solid #21262d;border-radius:8px;padding:1.25rem;margin-bottom:1.5rem;max-width:920px}
-.dag-wrapper{display:flex;gap:1.25rem;align-items:flex-start}
-.dag-bands{flex:1;display:flex;flex-direction:column;gap:.75rem}
+.dag-wrapper{display:flex;gap:1.25rem;align-items:flex-start;flex-wrap:wrap}
+.dag-bands{flex:1;display:flex;flex-direction:column;gap:.75rem;min-width:380px}
 .dag-band{border:1px solid #30363d;border-radius:6px;padding:.75rem 1rem}
 .dag-band-label{font-size:.63rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#6e7681;margin-bottom:.7rem}
 .dag-row{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
 .dag-feeder-row{display:flex;align-items:center;gap:.5rem;margin-top:.55rem}
 .dag-node{display:flex;flex-direction:column;align-items:center;gap:.2rem;background:#21262d;border:1.5px solid #30363d;border-radius:6px;padding:.4rem .65rem;font-size:.78rem;font-weight:600;color:#e6edf3;min-width:70px;text-align:center;transition:border-color .2s,background .2s}
-.dag-node.running{border-color:#388bfd;background:#0e1e36;animation:pn 1.2s ease-in-out infinite}
+.dag-node.running{border-color:#388bfd;background:#0e1e36}
 .dag-node.done{border-color:#3fb950;background:#0b1c10}
 .dag-node.stopped{border-color:#da3633;background:#1e0c0c}
-@keyframes pn{0%,100%{border-color:#388bfd}50%{border-color:#79c0ff}}
 .nb{font-size:.6rem;font-weight:500;padding:.1rem .3rem;border-radius:3px;text-transform:uppercase;letter-spacing:.04em}
 .nb.built{background:#0d2016;color:#3fb950;border:1px solid #1a3c22}
 .nb.nybilt{background:#191e26;color:#6e7681;border:1px solid #30363d}
@@ -42,27 +40,31 @@ header p{margin-top:.25rem;font-size:.9rem;color:#8b949e}
 .dag-consulted-title{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#6e7681}
 .dag-consulted-note{font-size:.63rem;color:#6e7681;line-height:1.4;font-style:italic;text-align:center}
 .panels-section{max-width:920px}
-.panels-section h2{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#6e7681;margin-bottom:.75rem}
+.panels-section h2{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#6e7681;margin:1.25rem 0 .75rem}
 details{background:#161b22;border:1px solid #21262d;border-radius:6px;margin-bottom:.4rem;overflow:hidden}
 details summary{display:flex;align-items:center;gap:.5rem;padding:.5rem .875rem;cursor:pointer;list-style:none;font-size:.85rem;font-weight:500;color:#c9d1d9;user-select:none}
 details summary::-webkit-details-marker{display:none}
 details summary::before{content:"\25B6";font-size:.58rem;color:#6e7681;flex-shrink:0;transition:transform .15s}
 details[open] summary::before{transform:rotate(90deg)}
 .badge{font-size:.67rem;padding:.12rem .4rem;border-radius:3px;font-weight:600;letter-spacing:.04em;margin-left:auto;flex-shrink:0}
-.idle{background:#21262d;color:#6e7681}
-.running-b{background:#0e1e36;color:#79c0ff}
-.done-b{background:#0b1c10;color:#3fb950}
-.stopped-b{background:#1e0c0c;color:#f85149}
+.idle{background:#21262d;color:#6e7681}.running-b{background:#0e1e36;color:#79c0ff}
+.done-b{background:#0b1c10;color:#3fb950}.stopped-b{background:#1e0c0c;color:#f85149}.gate-b{background:#191e26;color:#6e7681;border:1px solid #30363d}
 .panel-body{padding:.65rem .875rem;border-top:1px solid #21262d;font-size:.85rem;color:#8b949e}
 .panel-body p+p{margin-top:.35rem}
-.gate{font-style:italic;color:#4b5158}
+.gate{font-style:italic;color:#6e7681}
+table{width:100%;border-collapse:collapse;font-size:.8rem;margin-top:.35rem}
+th{text-align:left;padding:.25rem .5rem;border-bottom:1px solid #30363d;color:#c9d1d9}
+td{padding:.2rem .5rem;border-bottom:1px solid #21262d;color:#8b949e}
+.stopmark{background:#2d0f0f;border:1px solid #da3633;color:#f85149;border-radius:4px;padding:.4rem .6rem;font-size:.8rem}
+.edge-note{font-size:.75rem;color:#6e7681;font-style:italic;margin-top:.5rem}
 </style>
 </head>
 <body>
 <header>
 <h1>Percept-Formation-Pipeline</h1>
-<p>Staged pipeline from raw sense-data through ontology-grounded binding to open-class entity percepts.</p>
+<p>A percept-formation data pipeline: raw input refined into structural then semantic types, fallibly bound, then deterministically adjudicated.</p>
 </header>
+
 <section class="input-panel">
 <div class="tabs">
 <button class="tab active" id="tab-sample">Sample</button>
@@ -72,10 +74,11 @@ details[open] summary::before{transform:rotate(90deg)}
 <button class="btn" id="btn-sample">Load Sample &amp; Run</button>
 </div>
 <div id="pane-adhoc" class="tab-pane">
-<textarea id="adhoc-text" placeholder="Enter input text for the pipeline..."></textarea>
-<button class="btn" id="btn-run">Ad-hoc Run</button>
+<textarea id="adhoc-text" placeholder="Paste CSV or JSON..."></textarea>
+<button class="btn" id="btn-run">Run</button>
 </div>
 </section>
+
 <section class="dag-section">
 <div class="dag-wrapper">
 <div class="dag-bands">
@@ -85,12 +88,12 @@ details[open] summary::before{transform:rotate(90deg)}
 <div class="dag-node" id="dag-snp">SNP<span class="nb built">Built</span></div>
 <div class="dag-arr">&rarr;</div>
 <div class="dag-node" id="dag-bibss">BIBSS<span class="nb built">Built</span></div>
-<div class="dag-arr"><span id="dag-stop">&#9632; STOP</span>&rarr;</div>
+<div class="dag-arr"><span id="dag-stop">&#9888; STOP</span>&rarr;</div>
 <div class="dag-node" id="dag-sas">SAS<span class="nb nybilt">Not Yet Built</span></div>
 </div>
 <div class="dag-feeder-row">
 <div class="dag-node" id="dag-dknp">DKNP<span class="nb nybilt">Not Yet Built</span></div>
-<span class="fl">&mdash;&mdash; feeder &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&rarr; Binder</span>
+<span class="fl">&mdash; feeder &mdash;&rarr; Binder</span>
 </div>
 </div>
 <div class="dag-band">
@@ -106,41 +109,47 @@ details[open] summary::before{transform:rotate(90deg)}
 <div class="dag-consulted">
 <div class="dag-consulted-title">Consulted Resource</div>
 <div class="dag-node" id="dag-fandaws">Fandaws<span class="nb built">Built</span></div>
-<p class="dag-consulted-note">consulted, not an inline stage; presentational simplification</p>
+<p class="dag-consulted-note">consulted, not an inline stage (presentational simplification)</p>
 </div>
 </div>
 </section>
+
 <section class="panels-section">
-<h2>Stage Output</h2>
-<details id="panel-snp">
-<summary>SNP &mdash; Sense-data Normalization &amp; Parsing<span class="badge idle" id="badge-snp">idle</span></summary>
-<div class="panel-body" id="body-snp"><p>Awaiting run.</p></div>
+<h2>Pipeline Stages</h2>
+<details id="panel-snp" open>
+<summary>SNP &mdash; Semantic Normalization Proxy<span class="badge idle" id="badge-snp">idle</span></summary>
+<div class="panel-body" id="body-snp"></div>
 </details>
-<details id="panel-bibss">
-<summary>BIBSS &mdash; Background-Informed Binding Seed Selection<span class="badge idle" id="badge-bibss">idle</span></summary>
-<div class="panel-body" id="body-bibss"><p>Awaiting run.</p></div>
+<details id="panel-bibss" open>
+<summary>BIBSS &mdash; Brain-in-the-Box Schema Service<span class="badge idle" id="badge-bibss">idle</span></summary>
+<div class="panel-body" id="body-bibss"></div>
 </details>
 <details id="panel-sas">
-<summary>SAS &mdash; Semantic Annotation &amp; Scoring<span class="badge idle" id="badge-sas">idle</span></summary>
-<div class="panel-body" id="body-sas"><p class="gate">Gate &mdash; not built.</p></div>
-</details>
-<details id="panel-dknp">
-<summary>DKNP &mdash; Domain Knowledge &amp; Ontology Projection<span class="badge idle" id="badge-dknp">idle</span></summary>
-<div class="panel-body" id="body-dknp"><p class="gate">Gate &mdash; not built.</p></div>
-</details>
-<details id="panel-fandaws">
-<summary>Fandaws &mdash; APQC PCF Ontology Adapter<span class="badge idle" id="badge-fandaws">idle</span></summary>
-<div class="panel-body" id="body-fandaws"><p>Awaiting run.</p></div>
+<summary>SAS &mdash; Schema Alignment Service<span class="badge gate-b" id="badge-sas">Gate</span></summary>
+<div class="panel-body" id="body-sas"><p class="gate">Gate &mdash; not built. Data stops here.</p></div>
 </details>
 <details id="panel-binder">
-<summary>Binder &mdash; Ontology-Grounded Entity Binding<span class="badge idle" id="badge-binder">idle</span></summary>
-<div class="panel-body" id="body-binder"><p class="gate">Gate &mdash; not built.</p></div>
+<summary>Binder &mdash; Semantic Binder (SFB)<span class="badge gate-b" id="badge-binder">Gate</span></summary>
+<div class="panel-body" id="body-binder"><p class="gate">Not reached &mdash; upstream gate at SAS.</p></div>
 </details>
 <details id="panel-oce">
-<summary>OCE &mdash; Open-Class Entity Synthesis<span class="badge idle" id="badge-oce">idle</span></summary>
-<div class="panel-body" id="body-oce"><p class="gate">Gate &mdash; not built.</p><p>Constitutive law compiled from W2Fuel + ontology/RCR. ALS is out of scope.</p></div>
+<summary>OCE &mdash; Ontological Constraint Engine<span class="badge gate-b" id="badge-oce">Gate</span></summary>
+<div class="panel-body" id="body-oce"><p class="gate">Not reached &mdash; upstream gate at SAS. (When reachable, OCE depends on the W2Fuel-compiled constitutive law: ontology + RCR.)</p></div>
+</details>
+
+<h2>Parallel Feeder</h2>
+<details id="panel-dknp">
+<summary>DKNP &mdash; Deterministic Key Normalization Pipeline<span class="badge gate-b" id="badge-dknp">Gate</span></summary>
+<div class="panel-body" id="body-dknp"><p class="gate">Gate &mdash; not built (feeder into the Binder).</p></div>
+</details>
+
+<h2>Consulted Resource</h2>
+<details id="panel-fandaws" open>
+<summary>Fandaws &mdash; APQC PCF terminology binding<span class="badge idle" id="badge-fandaws">idle</span></summary>
+<div class="panel-body" id="body-fandaws"></div>
 </details>
 </section>
+
 <script type="module" src="./js/ui.js"></script>
 </body>
 </html>
