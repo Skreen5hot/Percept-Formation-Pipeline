@@ -227,10 +227,28 @@ const callbacks = {
       const present = new Set(fields.map((f) => f['fsdd:taintLevel']).filter(Boolean));
       body.appendChild(taintLegend(present));
       body.appendChild(fieldTable(fields));
-      for (const ie of (d['fsdd:hasImplicitEntity'] || []))
-        body.appendChild(note('implicit entity (required by the law, unwitnessed in the data): '
-          + ie['fsdd:concernsType']['@id'] + ' ' + EMDASH + ' an information-content record ABOUT an '
-          + 'absent participant (depth ' + ie['fsdd:depth'] + '), NOT an asserted instance.', 'edge-note'));
+      // IMPLICIT ENTITIES -- the law's required-but-unwitnessed participants. Surface the DERIVATION
+      // (fsdd:derivedFrom), not just the type: it is the justification, and for an inherence-derived entity
+      // it names the AXIOM (the non-obvious 'a present value entails an absent entity' derivation). The
+      // inherence-derived entity is accented + led 'by necessity'; plain missing-role entities are grey +
+      // led 'missing role' -- so when several render together the by-necessity one is legibly distinct.
+      const ies = d['fsdd:hasImplicitEntity'] || [];
+      if (ies.length) {
+        body.appendChild(note('Implicit entities ' + EMDASH + ' required by the law, unwitnessed in the '
+          + 'data; information-content records ABOUT absent participants, never asserted instances:', 'edge-note'));
+        for (const ie of ies) {
+          const df = ie['fsdd:derivedFrom'] || '';
+          const inh = /inherence/i.test(df);
+          const p = document.createElement('p');
+          p.className = 'implicit-entity' + (inh ? ' inherence' : '');
+          const lead = document.createElement('span'); lead.className = 'ie-lead';
+          lead.textContent = (inh ? 'by necessity: ' : 'missing role: ') + ie['fsdd:concernsType']['@id']
+            + ' (depth ' + ie['fsdd:depth'] + ')';
+          p.appendChild(lead);
+          p.appendChild(document.createTextNode(' ' + EMDASH + ' ' + df));
+          body.appendChild(p);
+        }
+      }
       // DOWNLOADS: the canonical emit() bytes (hash-verifiable), not a prettified rendering.
       const dl = (label, text, fname) => {
         const btn = document.createElement('button'); btn.className = 'btn'; btn.textContent = label;
