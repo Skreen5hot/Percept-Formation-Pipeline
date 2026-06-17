@@ -2,7 +2,7 @@ import { run } from './runner.js';
 import { SAMPLE_CSV } from './sample.js';
 
 const $ = (id) => document.getElementById(id);
-const BUILT = ['snp', 'bibss', 'sas', 'binder', 'fandaws'];
+const BUILT = ['snp', 'bibss', 'sas', 'binder', 'oce', 'fandaws'];
 const ALL = ['snp', 'bibss', 'sas', 'binder', 'oce', 'dknp', 'fandaws'];
 const TYPES = ['null', 'boolean', 'integer', 'number', 'string'];
 const EMDASH = String.fromCharCode(0x2014);  // em-dash, ASCII-safe source -> no mojibake
@@ -118,6 +118,24 @@ const callbacks = {
       const bdiags = prop['bind:diagnostics'] || [];
       if (bdiags.length) body.appendChild(note('diagnostics: '
         + bdiags.map((d) => d.code + (d.fieldId ? ':' + d.fieldId : '')).join(', '), 'edge-note'));
+    } else if (id === 'oce') {
+      if (st.status === 'gate') {   // the Binder declined -> nothing to adjudicate (honest, not a verdict)
+        dagClass('oce', 'stopped'); setBadge('oce', 'Gate', 'gate-b');
+        body.innerHTML = ''; body.appendChild(note(st.gateReason || 'not reached', 'gate'));
+        return;
+      }
+      dagClass('oce', 'done'); setBadge('oce', 'Done', 'done-b');
+      const j = st.judgment || {};
+      body.innerHTML = '';
+      body.appendChild(note('Verdict: ' + String(j['oce:verdict'] || '').toUpperCase() + ' ' + EMDASH
+        + ' disposition ' + (j['oce:disposition'] || '') + '. Deterministic adjudication of the binding '
+        + 'against the constitutive law; the per-necessity justification below IS the self-describing '
+        + 'judgment (every constitutive necessity, met or openly empty, with the axiom that decided it).'));
+      // the verdict word alone is a status; the per-necessity justification is the architecture made legible
+      body.appendChild(table(['Necessity', 'Kind', 'Status', 'Justification (the deciding axiom)'],
+        (j['oce:necessities'] || []).map((n) => [n['oce:relation'], n['oce:kind'], n['oce:status'], n['oce:evidence']])));
+      const od = j['oce:diagnostics'] || [];
+      if (od.length) body.appendChild(note('diagnostics: ' + od.map((d) => d.code).join(', '), 'edge-note'));
     } else if (id === 'fandaws') {
       dagClass('fandaws', 'done'); setBadge('fandaws', 'Done', 'done-b');
       const bind = st.binding || { rows: [], bound: 0, total: 0, field: '' };
@@ -132,11 +150,9 @@ const callbacks = {
 
 async function execute(raw) {
   clearState();
-  const result = await run(raw, callbacks);
-  // the built chain runs SNP -> BIBSS -> SAS -> Binder (Fandaws consulted), then stops at the OCE gate
-  if (result.stages.binder && result.stages.binder.status === 'done') {
-    const stop = $('dag-stop'); if (stop) stop.style.display = 'inline';
-  }
+  await run(raw, callbacks);
+  // SNP -> BIBSS -> SAS -> Binder -> OCE runs to an adjudicated verdict (Fandaws consulted; ALS terminal,
+  // out of scope). On a Binder decline, the Binder panel shows the decline and OCE is not reached.
 }
 
 function switchTab(which) {

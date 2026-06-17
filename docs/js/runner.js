@@ -2,6 +2,7 @@ import { normalize } from './snp.js';
 import { infer as bibssInfer } from './bibss.js';
 import { alignSchema } from './sas.js';
 import { bindSchema } from './binder.js';
+import { adjudicateProposal } from './oce.js';
 import { init as fandawsInit, bindRows } from './fandaws.js';
 
 export async function run(rawInput, callbacks = {}) {
@@ -11,7 +12,6 @@ export async function run(rawInput, callbacks = {}) {
   const inputMode = 'raw';
 
   function setGates() {
-    stages.oce = { status: 'gate', gateReason: 'OCE gate: compiled constitutive law W2Fuel+ontology/RCR' };
     stages.dknp = { status: 'gate', gateReason: 'DKNP not yet implemented' };
   }
 
@@ -71,6 +71,19 @@ export async function run(rawInput, callbacks = {}) {
   stages.binder = { status: 'done', proposal: binderResult };
   onStageDone?.('binder', stages.binder);
   lastBuiltStageReached = 'binder';
+
+  // OCE adjudicates the Binder's proposal against the constitutive law. If the Binder DECLINED (no
+  // proposal), there is nothing to adjudicate -- shown honestly as a gate, not a fabricated verdict.
+  if (binderResult['bind:proposals'] && binderResult['bind:proposals'].length) {
+    onStageStart?.('oce');
+    const judgment = adjudicateProposal(binderResult);
+    stages.oce = { status: 'done', judgment };
+    onStageDone?.('oce', stages.oce);
+    lastBuiltStageReached = 'oce';
+  } else {
+    stages.oce = { status: 'gate', gateReason: 'Not reached -- the Binder declined; no proposal to adjudicate.' };
+    onStageDone?.('oce', stages.oce);
+  }
 
   onStageStart?.('fandaws');
   await fandawsInit();
