@@ -401,7 +401,7 @@ OCE is the *conceptual* gate (constitutive necessity); the SHACL gate is the *su
 
 ## 13. Determinism and Canonicalization
 
-OCE serializes via JCS (RFC 8785). Constitutive necessities are evaluated and emitted in a canonical order: by necessity kind (subsumption, then inherence, then relational), then lexicographically by relation IRI. The `oce:lawHash` is the SHA-256 of the JCS-canonical law fragment actually used (the projected subset of axioms + RCR entries touched by the adjudication), making any verdict reproducible from the same law. No timestamps appear in the canonical judgment.
+OCE serializes via JCS (RFC 8785). Constitutive necessities are evaluated and emitted in a canonical order: by necessity kind (subsumption, then inherence, then relational), then lexicographically by relation IRI. The `oce:lawHash` is the SHA-256 of the JCS-canonical law fragment actually used (the projected subset of axioms + RCR entries touched by the adjudication), making any verdict reproducible from the same law. **Emitted format (pinned, v1.0.1):** `oce:lawHash` is a **bare 64-character lowercase hex string with no algorithm prefix** (e.g. `"4e278c…921981"`, not `"sha256:4e278c…"`). Downstream consumers (ALS, the FSDD) MUST accept this bare-hex form; the FSDD normalizes it to a `sha256:`-prefixed form for its own output (FSDD §6.3/RD-5). This pins the format by construction so the two specs do not diverge. No timestamps appear in the canonical judgment.
 
 ---
 
