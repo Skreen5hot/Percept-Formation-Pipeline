@@ -93,8 +93,9 @@ const callbacks = {
       const proposals = prop['bind:proposals'] || [];
       body.innerHTML = '';
       body.appendChild(note('Conjectural proposal layer. Morphology lexis is name-synthesized (DKNP not '
-        + 'built); frames are a demo catalog (the constitutive law / OCE not built). Proposals are '
-        + 'fallible conjectures, never warrants.', 'edge-note'));
+        + 'built); frames come from a real compiled one-frame constitutive law (a W2Fuel slice over OWL 2 '
+        + 'RL + RCR; the OCE firewall is not built). Proposals are fallible conjectures, never warrants.',
+        'edge-note'));
       if (!proposals.length) {
         body.appendChild(note('No frame proposed ' + EMDASH + ' the columns do not ground to any known '
           + 'frame (BIND-001). The Binder DECLINES rather than guess ' + EMDASH + ' declining when nothing '

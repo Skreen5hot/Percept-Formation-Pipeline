@@ -1,53 +1,40 @@
 import { bind } from './vendor/binder/src/bind.mjs';
+import LAW from './vendor/law/shipping_law.mjs';
 
-// Semantic Binder (SFB, PFP stage 4) demo adapter. The Binder is the conjectural proposal layer: it
-// proposes that the rows fall under a conceptual FRAME and binds each column to a role, by CONVERGENCE
-// across independent channels. It never asserts (the OCE would adjudicate; not built).
+// Semantic Binder (SFB, PFP stage 4) demo adapter. The Binder proposes that the rows fall under a
+// conceptual FRAME and binds each column to a role, by CONVERGENCE across independent channels. It never
+// asserts (the OCE would adjudicate; not built).
 //
-// HONEST DEMO SHIMS (stated in the UI): the morphology channel's lexis is SYNTHESISED by a name-tokenizer
-// (DKNP is not built); the frames + role-slots are a small DEMO catalog (the full constitutive law /
-// W2Fuel ontology+RCR is not built); the Fandaws scope is a demo terminology set with frame retrieval. The
-// faithful consequence: the APQC process sample grounds to NO frame, so the Binder DECLINES (BIND-001) --
-// declining when nothing converges is its core safety property. A shipment-shaped table (driver / vehicle /
-// origin / destination / date columns) DOES bind, with a convergence-with-review profile.
+// The frame catalog is now the REAL compiled constitutive law (js/vendor/law/shipping_law.mjs), produced
+// by the minimal W2Fuel slice (IntegratedAgent/experiments/w2fuel_compile.py) from a hand-authored OWL 2
+// RL + RCR ontology -- one frame (fan:ActOfShipping), real, verifiable. frameFit now reasons over real
+// subsumption + disjointness, so the bind and the decline are checkable, not just plausible. Still-shimmed
+// in the demo: the morphology lexis is name-synthesised (DKNP not built), and the Fandaws TERM map below is
+// a small demo terminology (Fandaws proper not wired); the OCE firewall is not built, so proposals remain
+// conjectures, never warrants. The APQC sample grounds to NO concept the law knows -> the Binder DECLINES.
 
-const LAW = { frames: {
-  'fan:ActOfShipping': { roles: [
-    { role: 'hasAgent',       relatumType: 'fan:Agent',          fillerKind: 'reference', constitutive: true, multiplicity: 'one' },
-    { role: 'usesVehicle',    relatumType: 'fan:Vehicle',        fillerKind: 'reference', constitutive: true, multiplicity: 'one' },
-    { role: 'hasObject',      relatumType: 'fan:Object',         fillerKind: 'reference', constitutive: true, multiplicity: 'one' },
-    { role: 'hasOrigin',      relatumType: 'fan:Site',           fillerKind: 'literal',   constitutive: true, multiplicity: 'one' },
-    { role: 'hasDestination', relatumType: 'fan:Site',           fillerKind: 'literal',   constitutive: true, multiplicity: 'one' },
-    { role: 'occupies',       relatumType: 'fan:TemporalRegion', fillerKind: 'literal',   constitutive: true, multiplicity: 'one' } ] } },
-  subClassOf: { 'fan:Driver': ['fan:Agent'], 'fan:Truck': ['fan:Vehicle'], 'fan:City': ['fan:Site'],
-                'fan:Date': ['fan:TemporalRegion'], 'fan:Goods': ['fan:Object'] } };
-
-const CONCEPTS = {
-  'fan:Driver': { id: 'fan:Driver', broader: ['fan:Agent'] },
-  'fan:Truck':  { id: 'fan:Truck',  broader: ['fan:Vehicle'] },
-  'fan:City':   { id: 'fan:City',   broader: ['fan:Site'] },
-  'fan:Date':   { id: 'fan:Date',   broader: ['fan:TemporalRegion'] },
-  'fan:Goods':  { id: 'fan:Goods',  broader: ['fan:Object'] } };
-
+// demo terminology: field-head -> a concept id that the compiled law carries (broader chains come from the
+// law, the single source of truth). Fandaws would own this; here it is a small curated demo set.
 const TERM = {
   driver: 'fan:Driver', operator: 'fan:Driver', pilot: 'fan:Driver', carrier: 'fan:Driver',
-  vehicle: 'fan:Truck', truck: 'fan:Truck', transport: 'fan:Truck',
+  truck: 'fan:Truck', vehicle: 'fan:Truck', transport: 'fan:Truck',
   origin: 'fan:City', source: 'fan:City', from: 'fan:City', city: 'fan:City',
   destination: 'fan:City', dest: 'fan:City', to: 'fan:City',
   ship: 'fan:Date', shipped: 'fan:Date', date: 'fan:Date', delivery: 'fan:Date', departure: 'fan:Date',
   goods: 'fan:Goods', cargo: 'fan:Goods', product: 'fan:Goods', item: 'fan:Goods' };
 
-function resolveTerm(label) { const id = TERM[String(label || '').toLowerCase()]; return id ? [CONCEPTS[id]] : []; }
+const concept = (id) => ({ id, broader: (LAW.subClassOf && LAW.subClassOf[id]) || [] });
+function resolveTerm(label) { const id = TERM[String(label || '').toLowerCase()]; return id ? [concept(id)] : []; }
 
 const SCOPE = {
   resolveTerm,
-  getConcept: (id) => CONCEPTS[id] || null,
-  // retrieve a candidate frame only when the columns actually ground to known concepts -- otherwise the
+  getConcept: (id) => (id ? concept(id) : null),
+  // a frame is retrieved only when the columns actually ground to concepts the law knows -- otherwise the
   // Binder gets no frame and honestly declines (BIND-001). This is what makes the APQC sample decline.
   retrieveFrames: (seed) => {
     const heads = (seed && seed.heads) || [];
     const grounded = heads.filter((h) => resolveTerm(h).length > 0).length;
-    return grounded >= 2 ? ['fan:ActOfShipping'] : [];
+    return grounded >= 2 ? Object.keys(LAW.frames || {}) : [];
   } };
 
 // DKNP-lexis synthesiser (a name tokenizer; DKNP is not built). head = the first non-id token; markers
