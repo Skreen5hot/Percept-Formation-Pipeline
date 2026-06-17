@@ -2,7 +2,7 @@ import { run } from './runner.js';
 import { SAMPLE_CSV } from './sample.js';
 
 const $ = (id) => document.getElementById(id);
-const BUILT = ['snp', 'bibss', 'sas', 'fandaws'];
+const BUILT = ['snp', 'bibss', 'sas', 'binder', 'fandaws'];
 const ALL = ['snp', 'bibss', 'sas', 'binder', 'oce', 'dknp', 'fandaws'];
 const TYPES = ['null', 'boolean', 'integer', 'number', 'string'];
 const EMDASH = String.fromCharCode(0x2014);  // em-dash, ASCII-safe source -> no mojibake
@@ -87,6 +87,36 @@ const callbacks = {
       const diags = st.diagnostics || [];
       if (diags.length) body.appendChild(note('diagnostics: '
         + diags.map((d) => d.code + (d.field ? ':' + d.field : '')).join(', '), 'edge-note'));
+    } else if (id === 'binder') {
+      dagClass('binder', 'done'); setBadge('binder', 'Done', 'done-b');
+      const prop = st.proposal || {};
+      const proposals = prop['bind:proposals'] || [];
+      body.innerHTML = '';
+      body.appendChild(note('Conjectural proposal layer. Morphology lexis is name-synthesized (DKNP not '
+        + 'built); frames are a demo catalog (the constitutive law / OCE not built). Proposals are '
+        + 'fallible conjectures, never warrants.', 'edge-note'));
+      if (!proposals.length) {
+        body.appendChild(note('No frame proposed ' + EMDASH + ' the columns do not ground to any known '
+          + 'frame (BIND-001). The Binder DECLINES rather than guess ' + EMDASH + ' declining when nothing '
+          + 'converges is its core safety property.', 'stopmark'));
+      } else {
+        const top = proposals[0];
+        const pb = top['bind:proposedBinding'] || {};
+        const conf = Number(top['bind:confidence'] || 0).toFixed(3);
+        body.appendChild(note('Frame: ' + pb.recordConcept + ' ' + EMDASH + ' confidence ' + conf
+          + (top['bind:requiresReview'] ? ' (requires review)' : '') + '. ' + (pb.bindings || []).length
+          + ' roles bound; residue ' + (top['bind:residueFields'] || []).length + '.'));
+        const VC = { agree: 'agree', disagree: 'disagree', silent: '-' };
+        body.appendChild(table(['Field', 'Role', 'Filler', 'Convergence (morph/lex/struct/frame/topic)', 'Conf'],
+          (top['bind:bindings'] || []).map((b) => [
+            b['bind:fieldId'], b['bind:role'], b['bind:fillerKind'],
+            (b['bind:convergence'] || []).map((v) => VC[v['bind:vote']] || '?').join(' '),
+            Number(b['bind:bindingConfidence'] || 0).toFixed(2),
+          ])));
+      }
+      const bdiags = prop['bind:diagnostics'] || [];
+      if (bdiags.length) body.appendChild(note('diagnostics: '
+        + bdiags.map((d) => d.code + (d.fieldId ? ':' + d.fieldId : '')).join(', '), 'edge-note'));
     } else if (id === 'fandaws') {
       dagClass('fandaws', 'done'); setBadge('fandaws', 'Done', 'done-b');
       const bind = st.binding || { rows: [], bound: 0, total: 0, field: '' };
@@ -102,8 +132,8 @@ const callbacks = {
 async function execute(raw) {
   clearState();
   const result = await run(raw, callbacks);
-  // the built chain runs SNP -> BIBSS -> SAS (Fandaws consulted), then the pipeline stops at the Binder gate
-  if (result.stages.sas && result.stages.sas.status === 'done') {
+  // the built chain runs SNP -> BIBSS -> SAS -> Binder (Fandaws consulted), then stops at the OCE gate
+  if (result.stages.binder && result.stages.binder.status === 'done') {
     const stop = $('dag-stop'); if (stop) stop.style.display = 'inline';
   }
 }

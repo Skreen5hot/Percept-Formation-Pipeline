@@ -1,6 +1,7 @@
 import { normalize } from './snp.js';
 import { infer as bibssInfer } from './bibss.js';
 import { alignSchema } from './sas.js';
+import { bindSchema } from './binder.js';
 import { init as fandawsInit, bindRows } from './fandaws.js';
 
 export async function run(rawInput, callbacks = {}) {
@@ -10,7 +11,6 @@ export async function run(rawInput, callbacks = {}) {
   const inputMode = 'raw';
 
   function setGates() {
-    stages.binder = { status: 'gate', gateReason: 'Binder not yet implemented' };
     stages.oce = { status: 'gate', gateReason: 'OCE gate: compiled constitutive law W2Fuel+ontology/RCR' };
     stages.dknp = { status: 'gate', gateReason: 'DKNP not yet implemented' };
   }
@@ -64,6 +64,13 @@ export async function run(rawInput, callbacks = {}) {
   stages.sas = { status: 'done', schema: sasResult.schema, diagnostics: sasResult.diagnostics };
   onStageDone?.('sas', stages.sas);
   lastBuiltStageReached = 'sas';
+
+  // Binder always runs (it never throws); declining with no frame is a valid, faithful outcome.
+  onStageStart?.('binder');
+  const binderResult = bindSchema(sasResult.schema);
+  stages.binder = { status: 'done', proposal: binderResult };
+  onStageDone?.('binder', stages.binder);
+  lastBuiltStageReached = 'binder';
 
   onStageStart?.('fandaws');
   await fandawsInit();

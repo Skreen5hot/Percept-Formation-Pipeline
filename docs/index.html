@@ -99,9 +99,8 @@ td{padding:.2rem .5rem;border-bottom:1px solid #21262d;color:#8b949e}
 <div class="dag-band">
 <div class="dag-band-label">Synthesis</div>
 <div class="dag-row">
-<div class="dag-arr"><span id="dag-stop">&#9888; STOP</span></div>
-<div class="dag-node" id="dag-binder">Binder<span class="nb nybilt">Not Yet Built</span></div>
-<div class="dag-arr">&rarr;</div>
+<div class="dag-node" id="dag-binder">Binder<span class="nb built">Built</span></div>
+<div class="dag-arr"><span id="dag-stop">&#9888; STOP</span>&rarr;</div>
 <div class="dag-node" id="dag-oce">OCE<span class="nb nybilt">Not Yet Built</span></div>
 </div>
 </div>
@@ -129,13 +128,13 @@ td{padding:.2rem .5rem;border-bottom:1px solid #21262d;color:#8b949e}
 <summary>SAS &mdash; Schema Alignment Service<span class="badge idle" id="badge-sas">idle</span></summary>
 <div class="panel-body" id="body-sas"></div>
 </details>
-<details id="panel-binder">
-<summary>Binder &mdash; Semantic Binder (SFB)<span class="badge gate-b" id="badge-binder">Gate</span></summary>
-<div class="panel-body" id="body-binder"><p class="gate">Gate &mdash; the synthesis band (Binder + OCE) waits on one shared artifact: the compiled constitutive law (W2Fuel: ontology + RCR). The Binder fallibly proposes that the rows fall under a conceptual <em>frame</em> and assigns each column a role in it &mdash; those frames live in that law, so without it there is nothing to bind against. Data stops here.</p></div>
+<details id="panel-binder" open>
+<summary>Binder &mdash; Semantic Binder (SFB)<span class="badge idle" id="badge-binder">idle</span></summary>
+<div class="panel-body" id="body-binder"></div>
 </details>
 <details id="panel-oce">
 <summary>OCE &mdash; Ontological Constraint Engine<span class="badge gate-b" id="badge-oce">Gate</span></summary>
-<div class="panel-body" id="body-oce"><p class="gate">Not reached &mdash; same gate as the Binder. OCE deterministically adjudicates a concept's constitutive <em>necessity</em> against the bound percept, and that necessity <em>is</em> the compiled constitutive law (W2Fuel: ontology + RCR) &mdash; the very artifact the Binder needs for its frames. The synthesis band gates on it as a pair, not as two independent stages.</p></div>
+<div class="panel-body" id="body-oce"><p class="gate">Gate &mdash; OCE not built. The Binder's frame is a fallible <em>conjecture</em>; OCE is the firewall that deterministically adjudicates each proposed binding against constitutive <em>necessity</em> &mdash; the compiled constitutive law (W2Fuel: ontology + RCR) &mdash; before anything is asserted. Until OCE exists, proposals are surfaced for review (and the demo's frames are a stand-in catalog), never warranted. Data stops here.</p></div>
 </details>
 
 <h2>Parallel Feeder</h2>
