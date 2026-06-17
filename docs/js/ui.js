@@ -43,8 +43,9 @@ function taintLegend(present) {
   const div = document.createElement('div'); div.className = 'taint-legend';
   for (const [lvl, label, reachable] of TAINT_LADDER) {
     const seen = present.has(lvl);
-    const s = chip(lvl + ' ' + label + (reachable ? '' : ' (not reached by these inputs)'),
-      'lg taint-' + lvl + ((reachable && !seen) ? ' ' : (reachable ? '' : ' off')));
+    // present levels POP (bold + outlined); absent levels RECEDE (muted); unreachable also italic + labelled.
+    let cls = 'lg taint-' + lvl + (seen ? ' seen' : (reachable ? ' absent' : ' off'));
+    const s = chip(lvl + ' ' + label + (reachable ? '' : ' (not reached by these inputs)'), cls);
     if (seen) s.style.outline = '1px solid currentColor';
     div.appendChild(s);
   }
