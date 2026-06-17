@@ -1,5 +1,5 @@
 import { run } from './runner.js';
-import { SAMPLE_CSV } from './sample.js';
+import { SAMPLE_CSV, MISLABELED_CSV } from './sample.js';
 
 const $ = (id) => document.getElementById(id);
 const BUILT = ['snp', 'bibss', 'sas', 'binder', 'oce', 'fandaws', 'fsdd'];
@@ -156,6 +156,11 @@ const callbacks = {
       body.appendChild(note('Adjudication Manifest ' + EMDASH + ' status ' + d['fsdd:datasetStatus']
         + ', taint ' + d['fsdd:datasetTaint'] + ', version ' + d['fsdd:dictionaryVersion'].slice(0, 18)
         + '... (content-addressed; the download re-hashes to this).'));
+      const rejected = (d['fsdd:hasField'] || []).filter((f) => f['fsdd:fulfillmentStatus'] === 'violated');
+      for (const f of rejected)
+        body.appendChild(note('REJECTED ' + EMDASH + ' the mapping ' + f['fsdd:column'] + ' -> '
+          + f['fsdd:role'] + ' is refused by the law: ' + f['fsdd:decidingAxiom'] + ' (quarantined at '
+          + f['fsdd:taintLevel'] + '). The dictionary names the law that makes the mapping wrong.', 'stopmark'));
       body.appendChild(table(['Field', 'Datatype', 'Semantic', 'Role', 'Status', 'Taint', 'Deciding axiom'],
         (d['fsdd:hasField'] || []).map((f) => [f['fsdd:column'], f['csvw:datatype'] || EMDASH,
           f['fsdd:semanticType'] || EMDASH, f['fsdd:role'] || 'n/a', f['fsdd:fulfillmentStatus'] || EMDASH,
@@ -202,6 +207,7 @@ function switchTab(which) {
 }
 
 $('btn-sample').addEventListener('click', () => execute(SAMPLE_CSV));
+$('btn-mislabeled').addEventListener('click', () => execute(MISLABELED_CSV));
 $('btn-run').addEventListener('click', () => execute($('adhoc-text').value || ''));
 $('tab-sample').addEventListener('click', () => switchTab('sample'));
 $('tab-adhoc').addEventListener('click', () => switchTab('adhoc'));
