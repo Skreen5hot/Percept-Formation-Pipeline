@@ -15,6 +15,7 @@ export default {
     "fan:Date",
     "fan:Driver",
     "fan:Goods",
+    "fan:Mass",
     "fan:Site",
     "fan:TransportedGood",
     "fan:Truck",
@@ -50,6 +51,9 @@ export default {
     ],
     "fan:Goods": [
       "fan:TransportedGood"
+    ],
+    "fan:Mass": [
+      "bfo:Quality"
     ]
   },
   "subClassOfClosure": {
@@ -86,6 +90,9 @@ export default {
     "fan:Goods": [
       "bfo:IndependentContinuant",
       "fan:TransportedGood"
+    ],
+    "fan:Mass": [
+      "bfo:Quality"
     ]
   },
   "disjointWith": {
@@ -94,6 +101,12 @@ export default {
     ],
     "fan:Vehicle": [
       "fan:Agent"
+    ],
+    "bfo:Process": [
+      "bfo:IndependentContinuant"
+    ],
+    "bfo:IndependentContinuant": [
+      "bfo:Process"
     ]
   },
   "properties": {
@@ -120,6 +133,12 @@ export default {
       "range": "fan:Site",
       "fillerKind": "literal",
       "multiplicity": "one"
+    },
+    "fan:inheresIn": {
+      "domain": "bfo:Quality",
+      "range": "bfo:IndependentContinuant",
+      "inherenceNecessity": true,
+      "requiredBearer": "bfo:IndependentContinuant"
     },
     "fan:occupies": {
       "domain": "fan:ActOfShipping",
