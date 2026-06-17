@@ -3,6 +3,7 @@ import { infer as bibssInfer } from './bibss.js';
 import { alignSchema } from './sas.js';
 import { bindSchema } from './binder.js';
 import { adjudicateProposal } from './oce.js';
+import { buildDictionary } from './fsdd.js';
 import { init as fandawsInit, bindRows } from './fandaws.js';
 
 export async function run(rawInput, callbacks = {}) {
@@ -91,6 +92,13 @@ export async function run(rawInput, callbacks = {}) {
   stages.fandaws = { status: 'done', binding: fandawsResult };
   onStageDone?.('fandaws', stages.fandaws);
   lastBuiltStageReached = 'fandaws';
+
+  // The PRODUCT: emit the Semantic Data Dictionary from the live stage outputs (composition in the open).
+  // On a Binder decline (no adjudication) it degrades to a standards-pure structural+semantic dictionary.
+  onStageStart?.('fsdd');
+  const fsddResult = buildDictionary(stages);
+  stages.fsdd = { status: (fsddResult && fsddResult.ok) ? 'done' : 'stopped', result: fsddResult };
+  onStageDone?.('fsdd', stages.fsdd);
 
   setGates();
 

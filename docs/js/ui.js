@@ -2,7 +2,7 @@ import { run } from './runner.js';
 import { SAMPLE_CSV } from './sample.js';
 
 const $ = (id) => document.getElementById(id);
-const BUILT = ['snp', 'bibss', 'sas', 'binder', 'oce', 'fandaws'];
+const BUILT = ['snp', 'bibss', 'sas', 'binder', 'oce', 'fandaws', 'fsdd'];
 const ALL = ['snp', 'bibss', 'sas', 'binder', 'oce', 'dknp', 'fandaws'];
 const TYPES = ['null', 'boolean', 'integer', 'number', 'string'];
 const EMDASH = String.fromCharCode(0x2014);  // em-dash, ASCII-safe source -> no mojibake
@@ -143,6 +143,45 @@ const callbacks = {
       body.appendChild(note('binding ' + bind.field + ': ' + bind.bound + ' of ' + bind.total + ' rows resolved'));
       body.appendChild(table(['Value', 'Bound Concept', 'Match'],
         (bind.rows || []).map((b) => [String(b.value), b.match === 'resolved' ? (b.label + ' (' + b.code + ')') : EMDASH, b.match])));
+    } else if (id === 'fsdd') {
+      const r = st.result;
+      body.innerHTML = '';
+      if (!r || !r.ok) {
+        setBadge('fsdd', 'No artifact', 'stopped-b');
+        body.appendChild(note('No dictionary emitted (no SAS percept, or structural invalidity).', 'stopmark'));
+        return;
+      }
+      setBadge('fsdd', 'Emitted', 'done-b');
+      const d = r.dictionary;
+      body.appendChild(note('Adjudication Manifest ' + EMDASH + ' status ' + d['fsdd:datasetStatus']
+        + ', taint ' + d['fsdd:datasetTaint'] + ', version ' + d['fsdd:dictionaryVersion'].slice(0, 18)
+        + '... (content-addressed; the download re-hashes to this).'));
+      body.appendChild(table(['Field', 'Datatype', 'Semantic', 'Role', 'Status', 'Taint', 'Deciding axiom'],
+        (d['fsdd:hasField'] || []).map((f) => [f['fsdd:column'], f['csvw:datatype'] || EMDASH,
+          f['fsdd:semanticType'] || EMDASH, f['fsdd:role'] || 'n/a', f['fsdd:fulfillmentStatus'] || EMDASH,
+          f['fsdd:taintLevel'] || EMDASH, f['fsdd:decidingAxiom'] || ''])));
+      for (const ie of (d['fsdd:hasImplicitEntity'] || []))
+        body.appendChild(note('implicit entity (required by the law, unwitnessed in the data): '
+          + ie['fsdd:concernsType']['@id'] + ' ' + EMDASH + ' an information-content record ABOUT an '
+          + 'absent participant (depth ' + ie['fsdd:depth'] + '), NOT an asserted instance.', 'edge-note'));
+      // DOWNLOADS: the canonical emit() bytes (hash-verifiable), not a prettified rendering.
+      const dl = (label, text, fname) => {
+        const btn = document.createElement('button'); btn.className = 'btn'; btn.textContent = label;
+        btn.style.marginRight = '.5rem'; btn.style.marginTop = '.5rem';
+        btn.addEventListener('click', () => {
+          const url = URL.createObjectURL(new Blob([text], { type: 'application/ld+json' }));
+          const a = document.createElement('a'); a.href = url; a.download = fname; a.click();
+          URL.revokeObjectURL(url);
+        });
+        return btn;
+      };
+      const row = document.createElement('p');
+      row.appendChild(dl('Download dictionary (canonical JSON-LD)', r.canonical, 'semantic-data-dictionary.jsonld'));
+      if (r.standardsPureCanonical)
+        row.appendChild(dl('Download standards-pure envelope (DCAT/PROV; field CSVW view in v1.3)', r.standardsPureCanonical, 'dictionary-standards-pure.jsonld'));
+      body.appendChild(row);
+      const diags = (r.diagnostics || []).map((x) => x.code);
+      if (diags.length) body.appendChild(note('diagnostics: ' + diags.join(', '), 'edge-note'));
     }
     // gate stages keep their static, verbatim "not built / not reached" copy (honest gating -- never overwritten)
   },
