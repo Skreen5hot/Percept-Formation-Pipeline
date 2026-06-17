@@ -22,3 +22,15 @@ T3,V3,Akron,Tampa,2024-03-01
 T4,V4,Provo,Salem,2024-04-01
 T5,V5,Mesa,Waco,2024-05-01
 T6,V6,Erie,Bend,2024-06-01`;
+
+// DIRTY data: driver_id mixes string + numeric ids (a SPLIT distribution -> taint L2) yet still grounds to
+// fan:Driver, binds hasAgent, and OCE FULFILLS it (Driver subClassOf Agent) -- the "fulfilled AND tainted"
+// star: usable, correct, and uncertain at once. ref_code is also split (L2) but grounds to nothing -> n/a.
+// One run shows the graded honesty: clean L1 fields beside an L2-fulfilled field beside an L2-unbound one.
+export const DIRTY_CSV = `driver_id,truck_id,origin,destination,ship_date,ref_code
+D1,T1,Boston,Denver,2024-01-05,A1
+1002,T2,Miami,Reno,2024-02-01,99
+D3,T3,Akron,Tampa,2024-03-01,B2
+1004,T4,Provo,Salem,2024-04-01,7
+D5,T5,Mesa,Waco,2024-05-01,C3
+1006,T6,Erie,Bend,2024-06-01,42`;

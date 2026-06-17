@@ -1,5 +1,5 @@
 import { run } from './runner.js';
-import { SAMPLE_CSV, MISLABELED_CSV } from './sample.js';
+import { SAMPLE_CSV, MISLABELED_CSV, DIRTY_CSV } from './sample.js';
 
 const $ = (id) => document.getElementById(id);
 const BUILT = ['snp', 'bibss', 'sas', 'binder', 'oce', 'fandaws', 'fsdd'];
@@ -29,6 +29,54 @@ function table(headers, rows) {
   t.appendChild(tb); return t;
 }
 function note(text, cls) { const p = document.createElement('p'); p.textContent = text; if (cls) p.className = cls; return p; }
+function chip(text, cls) { const s = document.createElement('span'); s.textContent = text; s.className = cls; return s; }
+
+// the taint ladder, named -- the levels that ACTUALLY occur through the CSV chain are live; L3/L4 are defined
+// but these inputs don't reach them (the data is never indeterminate enough at the type level), shown dimmed
+// so the spectrum is honest about its own coverage rather than implying a tidy monotone.
+const TAINT_LADDER = [
+  ['L1', 'unambiguous', true], ['L2', 'representational ambiguity', true],
+  ['L3', 'binding ambiguity', false], ['L4', 'semantic indeterminacy', false],
+  ['L5', 'constitutive contradiction', true],
+];
+function taintLegend(present) {
+  const div = document.createElement('div'); div.className = 'taint-legend';
+  for (const [lvl, label, reachable] of TAINT_LADDER) {
+    const seen = present.has(lvl);
+    const s = chip(lvl + ' ' + label + (reachable ? '' : ' (not reached by these inputs)'),
+      'lg taint-' + lvl + ((reachable && !seen) ? ' ' : (reachable ? '' : ' off')));
+    if (seen) s.style.outline = '1px solid currentColor';
+    div.appendChild(s);
+  }
+  return div;
+}
+// the FSDD field table with the Status and Taint cells colour-coded -- so clean (green), uncertain (amber),
+// and rejected (red) fields sit side by side and the graded honesty is visible at a glance.
+function fieldTable(fields) {
+  const t = document.createElement('table');
+  const heads = ['Field', 'Datatype', 'Semantic', 'Role', 'Status', 'Taint', 'Deciding axiom'];
+  const thead = document.createElement('thead'), htr = document.createElement('tr');
+  heads.forEach((h) => { const th = document.createElement('th'); th.textContent = h; htr.appendChild(th); });
+  thead.appendChild(htr); t.appendChild(thead);
+  const tb = document.createElement('tbody');
+  for (const f of fields) {
+    const tr = document.createElement('tr');
+    const status = f['fsdd:fulfillmentStatus'] || 'n/a';
+    const taint = f['fsdd:taintLevel'] || EMDASH;
+    const cells = [
+      [f['fsdd:column'], null], [f['csvw:datatype'] || EMDASH, null], [f['fsdd:semanticType'] || EMDASH, null],
+      [f['fsdd:role'] || 'n/a', null], [status, 'fstatus ' + (status === 'n/a' ? 'na' : status)],
+      [taint, 'taint taint-' + taint], [f['fsdd:decidingAxiom'] || '', null],
+    ];
+    cells.forEach(([txt, cls]) => {
+      const td = document.createElement('td');
+      if (cls) td.appendChild(chip(txt, cls)); else td.textContent = txt;
+      tr.appendChild(td);
+    });
+    tb.appendChild(tr);
+  }
+  t.appendChild(tb); return t;
+}
 
 function clearState() {
   ALL.forEach((id) => dagClass(id, null));
@@ -153,18 +201,31 @@ const callbacks = {
       }
       setBadge('fsdd', 'Emitted', 'done-b');
       const d = r.dictionary;
-      body.appendChild(note('Adjudication Manifest ' + EMDASH + ' status ' + d['fsdd:datasetStatus']
+      // datasetStatus is an ADJUDICATION verdict; a declined binding was never adjudicated, so the degraded
+      // dict carries no status key -- render that honestly rather than the literal "undefined".
+      const status = d['fsdd:datasetStatus'] || 'unadjudicated (Binder declined; no proposal to adjudicate)';
+      body.appendChild(note('Adjudication Manifest ' + EMDASH + ' status ' + status
         + ', taint ' + d['fsdd:datasetTaint'] + ', version ' + d['fsdd:dictionaryVersion'].slice(0, 18)
         + '... (content-addressed; the download re-hashes to this).'));
-      const rejected = (d['fsdd:hasField'] || []).filter((f) => f['fsdd:fulfillmentStatus'] === 'violated');
+      const fields = d['fsdd:hasField'] || [];
+      // REJECTED (red): a field the law refuses -- the catch, named.
+      const rejected = fields.filter((f) => f['fsdd:fulfillmentStatus'] === 'violated');
       for (const f of rejected)
         body.appendChild(note('REJECTED ' + EMDASH + ' the mapping ' + f['fsdd:column'] + ' -> '
           + f['fsdd:role'] + ' is refused by the law: ' + f['fsdd:decidingAxiom'] + ' (quarantined at '
           + f['fsdd:taintLevel'] + '). The dictionary names the law that makes the mapping wrong.', 'stopmark'));
-      body.appendChild(table(['Field', 'Datatype', 'Semantic', 'Role', 'Status', 'Taint', 'Deciding axiom'],
-        (d['fsdd:hasField'] || []).map((f) => [f['fsdd:column'], f['csvw:datatype'] || EMDASH,
-          f['fsdd:semanticType'] || EMDASH, f['fsdd:role'] || 'n/a', f['fsdd:fulfillmentStatus'] || EMDASH,
-          f['fsdd:taintLevel'] || EMDASH, f['fsdd:decidingAxiom'] || ''])));
+      // UNCERTAIN (amber): a field that is BOUND and MET yet carries taint -- usable, correct, and shaky at
+      // once. The point of the dirty-data case: fulfillment and taint are orthogonal axes, both reported.
+      const shaky = fields.filter((f) => f['fsdd:fulfillmentStatus'] === 'fulfilled'
+        && f['fsdd:taintLevel'] && f['fsdd:taintLevel'] !== 'L1' && f['fsdd:taintLevel'] !== 'L0');
+      for (const f of shaky)
+        body.appendChild(note('UNCERTAIN ' + EMDASH + ' ' + f['fsdd:column'] + ' is bound and met ('
+          + f['fsdd:role'] + ' fulfilled) yet flagged ' + f['fsdd:taintLevel'] + ': '
+          + (f['fsdd:taintDerivation'] || []).join('; ') + '. Usable and correct, but its values are '
+          + 'representationally mixed -- the dictionary reports the doubt rather than hiding it.', 'uncertainmark'));
+      const present = new Set(fields.map((f) => f['fsdd:taintLevel']).filter(Boolean));
+      body.appendChild(taintLegend(present));
+      body.appendChild(fieldTable(fields));
       for (const ie of (d['fsdd:hasImplicitEntity'] || []))
         body.appendChild(note('implicit entity (required by the law, unwitnessed in the data): '
           + ie['fsdd:concernsType']['@id'] + ' ' + EMDASH + ' an information-content record ABOUT an '
@@ -207,6 +268,7 @@ function switchTab(which) {
 }
 
 $('btn-sample').addEventListener('click', () => execute(SAMPLE_CSV));
+$('btn-dirty').addEventListener('click', () => execute(DIRTY_CSV));
 $('btn-mislabeled').addEventListener('click', () => execute(MISLABELED_CSV));
 $('btn-run').addEventListener('click', () => execute($('adhoc-text').value || ''));
 $('tab-sample').addEventListener('click', () => switchTab('sample'));
