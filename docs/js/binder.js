@@ -1,5 +1,5 @@
 import { bind } from './vendor/binder/src/bind.mjs';
-import LAW from './vendor/law/shipping_law.mjs';
+import LAW from './vendor/law/merged_law.mjs';   // BOTH frames; abductive selection chooses per table
 
 // Semantic Binder (SFB, PFP stage 4) demo adapter. The Binder proposes that the rows fall under a
 // conceptual FRAME and binds each column to a role, by CONVERGENCE across independent channels. It never
@@ -16,12 +16,18 @@ import LAW from './vendor/law/shipping_law.mjs';
 // demo terminology: field-head -> a concept id that the compiled law carries (broader chains come from the
 // law, the single source of truth). Fandaws would own this; here it is a small curated demo set.
 const TERM = {
+  // shipping frame
   driver: 'fan:Driver', operator: 'fan:Driver', pilot: 'fan:Driver', carrier: 'fan:Driver',
   truck: 'fan:Truck', vehicle: 'fan:Truck', transport: 'fan:Truck',
   origin: 'fan:City', source: 'fan:City', from: 'fan:City', city: 'fan:City',
   destination: 'fan:City', dest: 'fan:City', to: 'fan:City',
   ship: 'fan:Date', shipped: 'fan:Date', date: 'fan:Date', delivery: 'fan:Date', departure: 'fan:Date',
-  goods: 'fan:Goods', cargo: 'fan:Goods', product: 'fan:Goods', item: 'fan:Goods' };
+  goods: 'fan:Goods', cargo: 'fan:Goods', product: 'fan:Goods', item: 'fan:Goods',
+  // clinical frame (fan:ActOfMeasuring): subject + the measured analyte + the time
+  subject: 'fan:Subject', patient: 'fan:Subject',
+  glucose: 'fan:GlucoseConcentration',
+  analyte: 'fan:Analyte', result: 'fan:Analyte', reading: 'fan:Analyte', value: 'fan:Analyte',
+  measured: 'fan:Date', collected: 'fan:Date' };
 
 const concept = (id) => ({ id, broader: (LAW.subClassOf && LAW.subClassOf[id]) || [] });
 function resolveTerm(label) { const id = TERM[String(label || '').toLowerCase()]; return id ? [concept(id)] : []; }

@@ -3,6 +3,7 @@ import { resolveConcept, accidentalLocals, constitutiveLocals } from './lawAdapt
 import { project } from './lawProjection.mjs';
 import { collect } from './collector.mjs';
 import { evalNecessity } from './evaluate.mjs';
+import { inherenceComplete } from './inherenceComplete.mjs';
 import { structuralCheck } from './structural.mjs';
 import { aggregate } from './aggregate.mjs';
 import { assemble } from './assemble.mjs';
@@ -88,6 +89,11 @@ export function adjudicate(input) {
         diagnostics.push(makeDiagnostic('OCE-003', { relation, requiredType, foundType }));
       }
     }
+
+    // Step 4.5: Inherence-Completion -- a witnessed quality role entails an empty material bearer; supersede
+    // that bearer's plain relational empty with an inherence-cited one. Additive; no-op without a quality
+    // role (shipping). Never throws (the firewall invariant).
+    try { inherenceComplete(law, norm, necessities); } catch (e) { /* no-op on error */ }
 
     // Step 5: no percept -> OCE-007
     if (!percept) {

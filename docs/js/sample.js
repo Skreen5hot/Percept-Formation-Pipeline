@@ -34,3 +34,18 @@ D3,T3,Akron,Tampa,2024-03-01,B2
 1004,T4,Provo,Salem,2024-04-01,7
 D5,T5,Mesa,Waco,2024-05-01,C3
 1006,T6,Erie,Bend,2024-06-01,42`;
+
+// CLINICAL measurement: subject_id, the glucose VALUE, and the time. The Binder abductively selects the
+// fan:ActOfMeasuring frame (not shipping). subject + value + time bind and OCE fulfills them; the law's other
+// constitutive participants -- performer, instrument, specimen -- have no column, so they are DERIVED as
+// implicit entities. The SPECIMEN is special: the measured glucose is a quality that must inhere in a
+// material continuant, and the law names that bearer a specimen -> the value (present) entails the specimen
+// (absent) BY INHERENCE, cited to the axiom. Performer + instrument are ordinary missing roles; the specimen
+// is the non-obvious derivation. (No goods/agent/vehicle columns -> shipping does not fit -> no dispute.)
+export const CLINICAL_CSV = `subject_id,glucose_mg_dl,measured_at
+S1,95,2024-01-05
+S2,102,2024-02-01
+S3,88,2024-03-01
+S4,110,2024-04-01
+S5,99,2024-05-01
+S6,120,2024-06-01`;

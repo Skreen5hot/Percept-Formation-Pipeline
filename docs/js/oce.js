@@ -1,5 +1,5 @@
 import { adjudicate } from './vendor/oce/src/adjudicate.mjs';
-import LAW from './vendor/law/shipping_law.mjs';
+import LAW from './vendor/law/merged_law.mjs';   // BOTH frames (shipping + clinical); OCE adjudicates the SELECTED frame
 
 // OCE (Ontological Constraint Engine, PFP stage 5) demo adapter -- the deterministic firewall. It
 // adjudicates the Binder's SELECTED proposal against the compiled constitutive law and returns a

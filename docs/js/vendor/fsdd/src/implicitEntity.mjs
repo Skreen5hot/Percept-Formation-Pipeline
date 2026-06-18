@@ -16,10 +16,18 @@ export function implicitEntities(emptyNecessities, recordConcept, lawHash, lawRe
     const requiredType = necessity['oce:requiredType'];
     const lawRef = lawReference(lawHash, lawRegistry);
 
+    // An inherence-derived bearer (the specimen) cites the AXIOM, built from the necessity's STRUCTURED
+    // fields (never parsing oce:evidence): the witnessed quality entails this bearer by inherence. A plain
+    // missing constitutive role keeps the relational template -- the legible contrast the demo shows.
+    const derivedFrom = necessity['oce:kind'] === 'inherence'
+      ? 'required as the bearer of ' + necessity['oce:inheresQuality'] + ' by inherence ('
+        + relation + '; requiredBearer ' + necessity['oce:requiredBearer'] + ')'
+      : 'constitutive necessity ' + relation + ' of ' + recordConcept;
+
     const record = {
       '@type': ['fsdd:ImplicitEntityRecord', 'iao:InformationContentEntity'],
       'fsdd:concernsType': { '@id': requiredType },
-      'fsdd:derivedFrom': 'constitutive necessity ' + relation + ' of ' + recordConcept,
+      'fsdd:derivedFrom': derivedFrom,
       'fsdd:status': 'empty',
       'fsdd:perceptGrounded': true,
       'fsdd:depth': 1,

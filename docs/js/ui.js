@@ -1,5 +1,5 @@
 import { run } from './runner.js';
-import { SAMPLE_CSV, MISLABELED_CSV, DIRTY_CSV } from './sample.js';
+import { SAMPLE_CSV, MISLABELED_CSV, DIRTY_CSV, CLINICAL_CSV } from './sample.js';
 
 const $ = (id) => document.getElementById(id);
 const BUILT = ['snp', 'bibss', 'sas', 'binder', 'oce', 'fandaws', 'fsdd'];
@@ -289,6 +289,7 @@ function switchTab(which) {
 $('btn-sample').addEventListener('click', () => execute(SAMPLE_CSV));
 $('btn-dirty').addEventListener('click', () => execute(DIRTY_CSV));
 $('btn-mislabeled').addEventListener('click', () => execute(MISLABELED_CSV));
+$('btn-clinical').addEventListener('click', () => execute(CLINICAL_CSV));
 $('btn-run').addEventListener('click', () => execute($('adhoc-text').value || ''));
 $('tab-sample').addEventListener('click', () => switchTab('sample'));
 $('tab-adhoc').addEventListener('click', () => switchTab('adhoc'));

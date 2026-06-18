@@ -9,11 +9,17 @@ import { stripToStandards } from './vendor/fsdd/src/standardsPure.mjs';
 // whose hash is fsdd:dictionaryVersion), so a consumer can re-verify the content hash -- never a
 // demo-prettified approximation.
 
-// The Layer-0 law-metadata registry (Fandaws/W2Fuel would author this; here the demo's shipping-law entry,
-// keyed at runtime by the OCE judgment's lawHash).
+// The Layer-0 law-metadata registry (Fandaws/W2Fuel would author this; here the demo's law entries, keyed at
+// runtime by the OCE judgment's lawHash). The OCE now adjudicates against the MERGED law (both frames), so
+// the judgment's lawHash is the merged hash for either frame; we pick the metadata by the adjudicated CONCEPT
+// so a clinical record carries clinical provenance, not the shipping label.
 const SHIPPING_LAW_META = {
   lawIRI: 'https://laws.fnsr.dev/shipping', lawTitle: 'Shipping constitutive law',
   lawVersion: '1.0.0', lawPublished: '2026-03-04' };
+const CLINICAL_LAW_META = {
+  lawIRI: 'https://laws.fnsr.dev/clinical-measurement', lawTitle: 'Clinical measurement constitutive law',
+  lawVersion: '1.0.0', lawPublished: '2026-06-17' };
+const META_BY_CONCEPT = { 'fan:ActOfShipping': SHIPPING_LAW_META, 'fan:ActOfMeasuring': CLINICAL_LAW_META };
 
 export function buildDictionary(stages) {
   const schema = stages.sas && stages.sas.schema;
@@ -23,7 +29,8 @@ export function buildDictionary(stages) {
   const judgment = (stages.oce && stages.oce.status === 'done') ? stages.oce.judgment : null;
 
   const lawRegistry = {};
-  if (judgment && judgment['oce:lawHash']) lawRegistry[judgment['oce:lawHash']] = SHIPPING_LAW_META;
+  if (judgment && judgment['oce:lawHash'])
+    lawRegistry[judgment['oce:lawHash']] = META_BY_CONCEPT[judgment['oce:concept']] || SHIPPING_LAW_META;
 
   const input = {
     envelope: { 'dcterms:title': 'Demo dataset', rawInputHash: schema['viz:rawInputHash'], lawRegistry,
