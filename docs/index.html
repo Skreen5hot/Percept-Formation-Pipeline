@@ -20,6 +20,7 @@ header p{margin-top:.25rem;font-size:.9rem;color:#8b949e}
 .btn:hover{background:#2ea043}
 .btn.alt{background:#8b3a1f;margin-left:.5rem}.btn.alt:hover{background:#a8472a}
 .btn.warn{background:#7a5a06;margin-left:.5rem}.btn.warn:hover{background:#9e7409}
+.btn.clin{background:#1f6f8b;margin-left:.5rem}.btn.clin:hover{background:#2a8bad}
 .hint{font-size:.75rem;color:#8b949e;margin-top:.4rem}
 .dag-section{background:#161b22;border:1px solid #21262d;border-radius:8px;padding:1.25rem;margin-bottom:1.5rem;max-width:920px}
 .dag-wrapper{display:flex;gap:1.25rem;align-items:flex-start;flex-wrap:wrap}
@@ -66,6 +67,7 @@ td{padding:.2rem .5rem;border-bottom:1px solid #21262d;color:#8b949e}
 .implicit-entity.inherence{border-left-color:#58a6ff;background:#0d1a2b;color:#a9c7ff}
 .implicit-entity .ie-lead{font-weight:600;color:#c9d1d9}
 .implicit-entity.inherence .ie-lead{color:#cfe0ff}
+.implicit-entity .ie-warrant{display:block;font-size:.68rem;color:#6e7681;margin-top:.2rem;font-style:italic}
 /* taint ladder -- graded epistemic honesty, colour-coded so the spectrum is legible */
 .taint{display:inline-block;padding:.05rem .35rem;border-radius:3px;font-weight:600;font-size:.72rem}
 .taint-L0,.taint-L1{background:#0d2016;color:#3fb950}
@@ -97,7 +99,7 @@ td{padding:.2rem .5rem;border-bottom:1px solid #21262d;color:#8b949e}
 <button class="btn" id="btn-sample">Load Sample &amp; Run</button>
 <button class="btn warn" id="btn-dirty">Load Dirty Sample (uncertain) &amp; Run</button>
 <button class="btn alt" id="btn-mislabeled">Load Mislabeled Sample (rejected) &amp; Run</button>
-<button class="btn" id="btn-clinical" style="background:#1f6f8b">Load Clinical Sample (derives) &amp; Run</button>
+<button class="btn clin" id="btn-clinical">Load Clinical Sample (derives) &amp; Run</button>
 <p class="hint">Three points on the honesty ladder. <b>Dirty</b>: a driver column of mixed string/numeric ids &mdash; bound and met, yet flagged uncertain (usable, correct, shaky). <b>Mislabeled</b>: two vehicle columns and no driver &mdash; the adjudicator rejects the forced agent mapping and names the law. <b>Clinical</b>: a glucose table under a second law &mdash; the dictionary derives the unwitnessed performer, instrument, and (by inherence, from the value itself) the specimen.</p>
 </div>
 <div id="pane-adhoc" class="tab-pane">

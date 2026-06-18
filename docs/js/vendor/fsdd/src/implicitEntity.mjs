@@ -19,7 +19,8 @@ export function implicitEntities(emptyNecessities, recordConcept, lawHash, lawRe
     // An inherence-derived bearer (the specimen) cites the AXIOM, built from the necessity's STRUCTURED
     // fields (never parsing oce:evidence): the witnessed quality entails this bearer by inherence. A plain
     // missing constitutive role keeps the relational template -- the legible contrast the demo shows.
-    const derivedFrom = necessity['oce:kind'] === 'inherence'
+    const isInherence = necessity['oce:kind'] === 'inherence';
+    const derivedFrom = isInherence
       ? 'required as the bearer of ' + necessity['oce:inheresQuality'] + ' by inherence ('
         + relation + '; requiredBearer ' + necessity['oce:requiredBearer'] + ')'
       : 'constitutive necessity ' + relation + ' of ' + recordConcept;
@@ -34,6 +35,12 @@ export function implicitEntities(emptyNecessities, recordConcept, lawHash, lawRe
       'fsdd:adjudicatingLaw': lawRef.ref,
       'fsdd:note': 'ICE about a constitutively-required, unwitnessed participant; not an asserted instance.'
     };
+    // carry the inherence derivation's inputs as STRUCTURED provenance (so a consumer/render composes the
+    // justification from data, not by parsing fsdd:derivedFrom): the witnessed quality + the required bearer.
+    if (isInherence) {
+      record['fsdd:inheresQuality'] = { '@id': necessity['oce:inheresQuality'] };
+      record['fsdd:requiredBearer'] = { '@id': necessity['oce:requiredBearer'] };
+    }
 
     records.push(record);
     diagnostics.push(makeDiagnostic('FSDD-004', { necessity: relation, concernsType: requiredType }));

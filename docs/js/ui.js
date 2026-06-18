@@ -30,6 +30,12 @@ function table(headers, rows) {
 }
 function note(text, cls) { const p = document.createElement('p'); p.textContent = text; if (cls) p.className = cls; return p; }
 function chip(text, cls) { const s = document.createElement('span'); s.textContent = text; s.className = cls; return s; }
+// prefixed IRI -> plain words: 'fan:GlucoseConcentration' -> 'glucose concentration', 'fan:Specimen' -> 'specimen'
+function plainName(iri) {
+  const s = String(iri || '');
+  const local = s.slice(Math.max(s.lastIndexOf(':'), s.lastIndexOf('/'), s.lastIndexOf('#')) + 1);
+  return local.replace(/([a-z0-9])([A-Z])/g, '$1 $2').toLowerCase();
+}
 
 // the taint ladder, named -- the levels that ACTUALLY occur through the CSV chain are live; L3/L4 are defined
 // but these inputs don't reach them (the data is never indeterminate enough at the type level), shown dimmed
@@ -237,16 +243,26 @@ const callbacks = {
         body.appendChild(note('Implicit entities ' + EMDASH + ' required by the law, unwitnessed in the '
           + 'data; information-content records ABOUT absent participants, never asserted instances:', 'edge-note'));
         for (const ie of ies) {
-          const df = ie['fsdd:derivedFrom'] || '';
-          const inh = /inherence/i.test(df);
-          const p = document.createElement('p');
-          p.className = 'implicit-entity' + (inh ? ' inherence' : '');
+          const inh = !!ie['fsdd:inheresQuality'];   // structured -> an inherence-derived bearer
+          const div = document.createElement('div');
+          div.className = 'implicit-entity' + (inh ? ' inherence' : '');
           const lead = document.createElement('span'); lead.className = 'ie-lead';
-          lead.textContent = (inh ? 'by necessity: ' : 'missing role: ') + ie['fsdd:concernsType']['@id']
-            + ' (depth ' + ie['fsdd:depth'] + ')';
-          p.appendChild(lead);
-          p.appendChild(document.createTextNode(' ' + EMDASH + ' ' + df));
-          body.appendChild(p);
+          if (inh) {
+            // partner-facing: a present property FORCES this entity to exist. Plain lead carrying the
+            // entailment; the formal axiom citation demoted to a warrant beneath it.
+            const bearer = plainName(ie['fsdd:concernsType']['@id']);
+            const quality = plainName(ie['fsdd:inheresQuality']['@id']);
+            lead.textContent = 'must exist ' + EMDASH + ' a ' + bearer;
+            div.appendChild(lead);
+            div.appendChild(document.createTextNode(': the data records a ' + quality + ', which must inhere '
+              + 'in a physical ' + bearer + ' ' + EMDASH + ' even though no column names it.'));
+            div.appendChild(chip('warrant: ' + (ie['fsdd:derivedFrom'] || ''), 'ie-warrant'));
+          } else {
+            lead.textContent = 'missing role: ' + ie['fsdd:concernsType']['@id'] + ' (depth ' + ie['fsdd:depth'] + ')';
+            div.appendChild(lead);
+            div.appendChild(document.createTextNode(' ' + EMDASH + ' ' + (ie['fsdd:derivedFrom'] || '')));
+          }
+          body.appendChild(div);
         }
       }
       // DOWNLOADS: the canonical emit() bytes (hash-verifiable), not a prettified rendering.
