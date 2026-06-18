@@ -49,3 +49,15 @@ S3,88,2024-03-01
 S4,110,2024-04-01
 S5,99,2024-05-01
 S6,120,2024-06-01`;
+
+// DISPUTED data: a transaction (counterparty, amount, date) that is honestly ambiguous between a SALE (read
+// from the seller's books) and a PURCHASE (read from the buyer's). Every column legitimately fills a role in
+// BOTH frames, so the Binder scores them EQUALLY and DECLINES TO CHOOSE -- two candidates recorded, routed to
+// a commit gate, no winner. The dictionary's headline is the REFUSAL (datasetStatus 'disputed', taint L4 --
+// "disputed between competing laws"), not a single frame's verdict. Each reading implies a different
+// unwitnessed party (the seller vs the buyer).
+export const DISPUTED_CSV = `counterparty_id,amount,date
+Acme,1200,2024-01-05
+Beta,980,2024-02-01
+Ciri,1500,2024-03-01
+Delta,640,2024-04-01`;

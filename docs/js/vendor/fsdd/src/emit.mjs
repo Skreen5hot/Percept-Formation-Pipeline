@@ -7,6 +7,7 @@ import { disputes } from './dispute.mjs';
 import { stripToStandards } from './standardsPure.mjs';
 import { dictionaryHash } from './jcs.mjs';
 import { makeDiagnostic } from './diagnostics.mjs';
+import { maxLevel } from './taint.mjs';
 
 const CONTEXT = {
   "fsdd": "https://fnsr.dev/fsdd#",
@@ -103,6 +104,17 @@ export function emit(input) {
       'fsdd:hasImplicitEntity': implicit ?? [],
       'fsdd:disputed': disp ?? [],
     };
+
+    // DISPUTE SUPPRESSION: when the dataset is disputed (two competing readings, no winner), the REFUSAL is
+    // the headline -- not a single frame's provisional verdict. datasetStatus becomes 'disputed'; taint
+    // becomes L4 ("disputed between competing laws" -- the second clause of L4's definition); every field is
+    // 'contested' so no row asserts a single-frame fulfillment. Bounded: fires ONLY when disputed, so the
+    // non-dispute path (and its content hash) is byte-identical.
+    if ((disp ?? []).length > 0) {
+      dictionary['fsdd:datasetStatus'] = 'disputed';
+      dictionary['fsdd:datasetTaint'] = maxLevel(maxTaint, 'L4');
+      for (const f of (dictionary['fsdd:hasField'] || [])) f['fsdd:fulfillmentStatus'] = 'contested';
+    }
 
     // prov:wasAttributedTo omitted entirely when no agent (never set to undefined)
     if (input.envelope?.agent !== undefined) {

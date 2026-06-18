@@ -1,5 +1,5 @@
 import { run } from './runner.js';
-import { SAMPLE_CSV, MISLABELED_CSV, DIRTY_CSV, CLINICAL_CSV } from './sample.js';
+import { SAMPLE_CSV, MISLABELED_CSV, DIRTY_CSV, CLINICAL_CSV, DISPUTED_CSV } from './sample.js';
 
 const $ = (id) => document.getElementById(id);
 const BUILT = ['snp', 'bibss', 'sas', 'binder', 'oce', 'fandaws', 'fsdd'];
@@ -230,7 +230,23 @@ const callbacks = {
           + f['fsdd:role'] + ' fulfilled) yet flagged ' + f['fsdd:taintLevel'] + ': '
           + (f['fsdd:taintDerivation'] || []).join('; ') + '. Usable and correct, but its values are '
           + 'representationally mixed -- the dictionary reports the doubt rather than hiding it.', 'uncertainmark'));
+      // DISPUTED (violet, L4): two competing readings, no winner -- the system DECLINES TO CHOOSE. The
+      // headline is the refusal (datasetStatus 'disputed'); both candidates are recorded and routed to a
+      // commit gate. This is what lights L4 ("disputed between competing laws").
+      for (const dispute of (d['fsdd:disputed'] || [])) {
+        const cands = dispute['fsdd:candidates'] || [];
+        const names = cands.map((c) => plainName(c['fsdd:frame'])).join(' vs ');
+        body.appendChild(note('DISPUTED ' + EMDASH + ' the data is honestly ambiguous between ' + names
+          + '; the adjudicator DECLINES TO CHOOSE. Both readings are recorded and routed to a commit gate ('
+          + dispute['fsdd:resolution'] + ') with no winner ' + EMDASH + ' quarantined at L4 (disputed between '
+          + 'competing laws). The dictionary refuses to pick rather than guess.', 'disputemark'));
+        for (const c of cands)
+          body.appendChild(note('reading: ' + plainName(c['fsdd:frame']) + ' (confidence '
+            + Number(c['fsdd:confidence'] || 0).toFixed(2) + ') ' + EMDASH + ' a valid binding of the same '
+            + 'columns; neither outscores the other.', 'edge-note'));
+      }
       const present = new Set(fields.map((f) => f['fsdd:taintLevel']).filter(Boolean));
+      if (d['fsdd:datasetTaint']) present.add(d['fsdd:datasetTaint']);  // dataset-level taint (L4 on a dispute) lights the legend
       body.appendChild(taintLegend(present));
       body.appendChild(fieldTable(fields));
       // IMPLICIT ENTITIES -- the law's required-but-unwitnessed participants. Surface the DERIVATION
@@ -306,6 +322,7 @@ $('btn-sample').addEventListener('click', () => execute(SAMPLE_CSV));
 $('btn-dirty').addEventListener('click', () => execute(DIRTY_CSV));
 $('btn-mislabeled').addEventListener('click', () => execute(MISLABELED_CSV));
 $('btn-clinical').addEventListener('click', () => execute(CLINICAL_CSV));
+$('btn-disputed').addEventListener('click', () => execute(DISPUTED_CSV));
 $('btn-run').addEventListener('click', () => execute($('adhoc-text').value || ''));
 $('tab-sample').addEventListener('click', () => switchTab('sample'));
 $('tab-adhoc').addEventListener('click', () => switchTab('adhoc'));

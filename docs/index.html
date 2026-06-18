@@ -21,6 +21,7 @@ header p{margin-top:.25rem;font-size:.9rem;color:#8b949e}
 .btn.alt{background:#8b3a1f;margin-left:.5rem}.btn.alt:hover{background:#a8472a}
 .btn.warn{background:#7a5a06;margin-left:.5rem}.btn.warn:hover{background:#9e7409}
 .btn.clin{background:#1f6f8b;margin-left:.5rem}.btn.clin:hover{background:#2a8bad}
+.btn.disp{background:#5a3a8b;margin-left:.5rem}.btn.disp:hover{background:#6e49a8}
 .hint{font-size:.75rem;color:#8b949e;margin-top:.4rem}
 .dag-section{background:#161b22;border:1px solid #21262d;border-radius:8px;padding:1.25rem;margin-bottom:1.5rem;max-width:920px}
 .dag-wrapper{display:flex;gap:1.25rem;align-items:flex-start;flex-wrap:wrap}
@@ -61,6 +62,7 @@ th{text-align:left;padding:.25rem .5rem;border-bottom:1px solid #30363d;color:#c
 td{padding:.2rem .5rem;border-bottom:1px solid #21262d;color:#8b949e}
 .stopmark{background:#2d0f0f;border:1px solid #da3633;color:#f85149;border-radius:4px;padding:.4rem .6rem;font-size:.8rem}
 .uncertainmark{background:#2a2206;border:1px solid #9e7409;color:#d29922;border-radius:4px;padding:.4rem .6rem;font-size:.8rem;margin-top:.4rem}
+.disputemark{background:#241a2e;border:1px solid #8957e5;color:#d2a8ff;border-radius:4px;padding:.4rem .6rem;font-size:.8rem;margin-top:.4rem}
 .edge-note{font-size:.75rem;color:#6e7681;font-style:italic;margin-top:.5rem}
 /* implicit entities -- plain missing-role (grey) vs by-necessity/inherence-derived (accented) */
 .implicit-entity{font-size:.78rem;border-left:2px solid #30363d;padding:.25rem .6rem;margin-top:.3rem;color:#8b949e}
@@ -100,7 +102,8 @@ td{padding:.2rem .5rem;border-bottom:1px solid #21262d;color:#8b949e}
 <button class="btn warn" id="btn-dirty">Load Dirty Sample (uncertain) &amp; Run</button>
 <button class="btn alt" id="btn-mislabeled">Load Mislabeled Sample (rejected) &amp; Run</button>
 <button class="btn clin" id="btn-clinical">Load Clinical Sample (derives) &amp; Run</button>
-<p class="hint">Three points on the honesty ladder. <b>Dirty</b>: a driver column of mixed string/numeric ids &mdash; bound and met, yet flagged uncertain (usable, correct, shaky). <b>Mislabeled</b>: two vehicle columns and no driver &mdash; the adjudicator rejects the forced agent mapping and names the law. <b>Clinical</b>: a glucose table under a second law &mdash; the dictionary derives the unwitnessed performer, instrument, and (by inherence, from the value itself) the specimen.</p>
+<button class="btn disp" id="btn-disputed">Load Disputed Sample (declines) &amp; Run</button>
+<p class="hint">Three points on the honesty ladder. <b>Dirty</b>: a driver column of mixed string/numeric ids &mdash; bound and met, yet flagged uncertain (usable, correct, shaky). <b>Mislabeled</b>: two vehicle columns and no driver &mdash; the adjudicator rejects the forced agent mapping and names the law. <b>Clinical</b>: a glucose table under a second law &mdash; the dictionary derives the unwitnessed performer, instrument, and (by inherence, from the value itself) the specimen. <b>Disputed</b>: a transaction that is honestly both a sale and a purchase &mdash; the adjudicator declines to choose, records both, and lights L4.</p>
 </div>
 <div id="pane-adhoc" class="tab-pane">
 <textarea id="adhoc-text" placeholder="Paste CSV or JSON..."></textarea>

@@ -27,7 +27,10 @@ const TERM = {
   subject: 'fan:Subject', patient: 'fan:Subject',
   glucose: 'fan:GlucoseConcentration',
   analyte: 'fan:Analyte', result: 'fan:Analyte', reading: 'fan:Analyte', value: 'fan:Analyte',
-  measured: 'fan:Date', collected: 'fan:Date' };
+  measured: 'fan:Date', collected: 'fan:Date',
+  // dispute frames (fan:ActOfSale vs fan:ActOfPurchase): the same row is a sale or a purchase
+  counterparty: 'fan:Party', party: 'fan:Party', account: 'fan:Party',
+  amount: 'fan:MonetaryAmount', sum: 'fan:MonetaryAmount', total: 'fan:MonetaryAmount' };
 
 const concept = (id) => ({ id, broader: (LAW.subClassOf && LAW.subClassOf[id]) || [] });
 function resolveTerm(label) { const id = TERM[String(label || '').toLowerCase()]; return id ? [concept(id)] : []; }
