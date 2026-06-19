@@ -119,7 +119,7 @@ export default {
     "fan:hasDestination": {
       "domain": "fan:ActOfShipping",
       "range": "fan:Site",
-      "fillerKind": "literal",
+      "fillerKind": "reference",
       "multiplicity": "one"
     },
     "fan:hasObject": {
@@ -131,7 +131,7 @@ export default {
     "fan:hasOrigin": {
       "domain": "fan:ActOfShipping",
       "range": "fan:Site",
-      "fillerKind": "literal",
+      "fillerKind": "reference",
       "multiplicity": "one"
     },
     "fan:inheresIn": {
@@ -171,7 +171,7 @@ export default {
         {
           "role": "hasDestination",
           "relatumType": "fan:Site",
-          "fillerKind": "literal",
+          "fillerKind": "reference",
           "constitutive": true,
           "multiplicity": "one"
         },
@@ -185,7 +185,7 @@ export default {
         {
           "role": "hasOrigin",
           "relatumType": "fan:Site",
-          "fillerKind": "literal",
+          "fillerKind": "reference",
           "constitutive": true,
           "multiplicity": "one"
         },
@@ -227,7 +227,7 @@ export default {
       "iao:InformationContentEntity"
     ],
     "@id": "spec:fnsr-reference_ActOfShipping_demo_v1",
-    "frame:specVersion": "sha256:52a18e26617630e63c8aaa2f791611e23c9b96030bc55248ea797c361c47dbf5",
+    "frame:specVersion": "sha256:a2a0d80ca7fdb65de4b859b21b03096bc52491410e2143834b4debe952eefe8d",
     "iao:isAbout": "fan:ActOfShipping",
     "frame:aboutKind": "fan:ActOfShipping",
     "frame:groundedIn": {
