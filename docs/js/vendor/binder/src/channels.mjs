@@ -39,9 +39,17 @@ export function lexical(field, lexis, roleSlot, frameId, ctx) {
 }
 
 export function structural(field, lexis, roleSlot, frameId, ctx) {
+  // CONCEPT-AWARE: the structural channel votes on the column's grounded CONCEPT satisfying the relatum
+  // type, not on filler-SHAPE alone (shape-only AGREE was the spurious-foothold source -- e.g. ref_code).
+  // No concept -> SILENT (no concept-basis; the correct neutral). classifyFieldShape is still computed for
+  // evidence, and morphology still uses shape, so shape information is not lost.
   const shape = classifyFieldShape(field, lexis);
-  if (shape === roleSlot.fillerKind) return channelVote('structural', VOTE.AGREE, { shape });
-  return channelVote('structural', VOTE.DISAGREE, { shape, expected: roleSlot.fillerKind });
+  const c = (ctx.scope.resolveTerm(lexis && lexis.head) || [])[0];
+  if (!c) return channelVote('structural', VOTE.SILENT, { shape });
+  if (relatumSatisfied(ctx.law, c.id, roleSlot.relatumType)) {
+    return channelVote('structural', VOTE.AGREE, { shape, concept: c.id, relatumType: roleSlot.relatumType });
+  }
+  return channelVote('structural', VOTE.DISAGREE, { shape, concept: c.id, relatumType: roleSlot.relatumType });
 }
 
 export function frameFit(field, lexis, roleSlot, frameId, ctx) {
