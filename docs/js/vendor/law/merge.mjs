@@ -31,5 +31,19 @@ export function mergeLaws(a, b) {
     properties: { ...((a && a.properties) || {}), ...((b && b.properties) || {}) },
     frames: { ...((a && a.frames) || {}), ...((b && b.frames) || {}) },
     rcr: { ...((a && a.rcr) || {}), ...((b && b.rcr) || {}) },
+    // F-6: CARRY the subjection envelope as a per-frame UNION. Each compiled law has a single top-level
+    // `subject` (its frame's signed constitutive specification); a previously-merged law carries a
+    // `subjects` array. Fold both forms, preserving each subject VERBATIM (no flatten, no field-merge, no
+    // invented merged asserter/specVersion). Each subject's frame:aboutKind ties it to its frame.
+    //
+    // RECONCILIATION FLAG (do NOT treat as resolved): governance §3.3 models `subject` as a TOP-LEVEL
+    // property of a SINGLE-theme specification. The merged law aggregates multiple frames, so a single
+    // top-level subject is the WRONG shape for it -- the merged artifact is an AGGREGATION of
+    // specifications, not itself one subjected spec. `subjects` (array) is the pragmatic reconciliation;
+    // §3.3 does not model the merged/multi-frame compiled artifact. Candidate governance-spec revision.
+    subjects: [
+      ...((a && a.subjects) || (a && a.subject ? [a.subject] : [])),
+      ...((b && b.subjects) || (b && b.subject ? [b.subject] : [])),
+    ],
   };
 }

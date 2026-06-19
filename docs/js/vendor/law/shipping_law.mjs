@@ -220,5 +220,34 @@ export default {
         "fan:wasLate"
       ]
     }
+  },
+  "subject": {
+    "@type": [
+      "frame:ConstitutiveSpecification",
+      "iao:InformationContentEntity"
+    ],
+    "@id": "spec:fnsr-reference_ActOfShipping_demo_v1",
+    "frame:specVersion": "sha256:52a18e26617630e63c8aaa2f791611e23c9b96030bc55248ea797c361c47dbf5",
+    "iao:isAbout": "fan:ActOfShipping",
+    "frame:aboutKind": "fan:ActOfShipping",
+    "frame:groundedIn": {
+      "@id": "ont:fnsr-shipping-taxonomy-v1",
+      "frame:taxonomyHash": "sha256:c191baed9a9a7282675fa5e968ef8913753b31f2f3e6d5195d75071fd4b2ddd6"
+    },
+    "frame:assertedBy": "org:fnsr-reference",
+    "frame:scope": {
+      "frame:businessUnit": "reference-demo",
+      "frame:geography": "reference-global",
+      "frame:lineOfBusiness": "carriage"
+    },
+    "frame:signedBy": {
+      "frame:signed": false,
+      "@type": "frame:UnsignedPlaceholder"
+    },
+    "frame:authoredVia": "person:semantic-architect",
+    "frame:assertedAt": "2026-06-18",
+    "frame:status": "draft-unsigned",
+    "frame:scopeOf": null,
+    "frame:supersedes": null
   }
 };
