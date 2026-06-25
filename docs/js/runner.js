@@ -5,6 +5,7 @@ import { bindSchema } from './binder.js';
 import { adjudicateProposal } from './oce.js';
 import { buildDictionary } from './fsdd.js';
 import { init as fandawsInit, bindRows } from './fandaws.js';
+import { resolveStar, wrapForFsddPanel, STAR_NORTHWIND } from './ssm.js';
 
 export async function run(rawInput, callbacks = {}) {
   const { onStageStart, onStageDone } = callbacks;
@@ -103,4 +104,81 @@ export async function run(rawInput, callbacks = {}) {
   setGates();
 
   return { stages, inputMode, lastBuiltStageReached };
+}
+
+// runStar -- the STRUCTURED-SOURCE FRONT, parallel to run() (the raw-text front). Same callback interface, so
+// the UI renders it through the same stage panels. The star path resolves FKs + binds roles (the SSM front),
+// then the resulting flat ActOfOrdering frame is adjudicated by the SAME shared Binder->OCE->FSDD core. The
+// existing run() path is untouched -- this is additive (extend, don't replace). integrate() (vendor/ssm) is
+// the proven orchestrator (capstone smoke 6/6); runStar PRESENTS its decision per stage, never re-derives it.
+export async function runStar(factRows, callbacks = {}) {
+  const { onStageStart, onStageDone } = callbacks;
+  const stages = {};
+  const inputMode = 'star';
+
+  const mapping = STAR_NORTHWIND.ssm;
+  const factSpec = mapping['ssm:facts'][Object.keys(mapping['ssm:facts'])[0]];
+  const RA = factSpec['ssm:roleAssignments'] || [];
+  const dims = mapping['ssm:dimensions'] || {};
+  const recordConcept = factSpec['ssm:recordConcept'];
+
+  // SSM FRONT: resolve FKs + bind roles. integrate() composes the SHARED vendor/{oce,fsdd,binder}.
+  onStageStart?.('ssm');
+  const resolved = resolveStar(factRows);
+  const row = (resolved.results || [])[0] || null;
+  const factRow = factRows[0] || {};
+
+  const defectFieldId = row && row.defect && row.defect.diagnostic && row.defect.diagnostic.fieldId;
+  const roleDefectRoles = new Set(((row && row.roleDefects) || []).map((d) => String(d.role)));
+  const roleResolutions = RA.map((ra) => {
+    const fkVal = factRow[ra['ssm:fkColumn']];
+    let note;
+    if (fkVal === null || fkVal === undefined) note = 'null';
+    else if (ra['ssm:fkColumn'] === defectFieldId) note = 'dangling -> frame excluded';
+    else if (roleDefectRoles.has(String(ra['ssm:role']))) note = 'dangling (accidental) -> roleDefect';
+    else note = 'resolved';
+    return {
+      fkColumn: ra['ssm:fkColumn'], role: ra['ssm:role'], refTable: ra['ssm:refTable'],
+      relatumConcept: (dims[ra['ssm:refTable']] || {})['ssm:entityClass'], fkValue: fkVal, note,
+    };
+  });
+  stages.ssm = {
+    status: row ? 'done' : 'stopped', recordConcept, roleResolutions,
+    outcome: row && row.outcome, roleDefects: (row && row.roleDefects) || [], capMarkers: (row && row.capMarkers) || [],
+  };
+  onStageDone?.('ssm', stages.ssm);
+
+  const excluded = !row || row.outcome === 'dangling' || row.outcome === 'fails' || !row.dictionary;
+
+  // CONVERGENCE: the resolved roles become a flat frame proposal handed to the SHARED Binder.
+  onStageStart?.('binder');
+  if (excluded) {
+    stages.binder = { status: 'gate', gateReason: 'Frame excluded at the SSM front (constitutive dangling); no proposal to adjudicate.' };
+  } else {
+    const roleBindings = roleResolutions
+      .filter((r) => r.note === 'resolved' || r.note === 'dangling (accidental) -> roleDefect')
+      .map((r) => ({ role: r.role, relatumConcept: r.relatumConcept, fieldId: 'viz:field/' + r.fkColumn }));
+    stages.binder = { status: 'done', shared: true, proposal: { recordConcept, roleBindings } };
+  }
+  onStageDone?.('binder', stages.binder);
+
+  // SHARED OCE core verdict (the per-role justification is carried in the manifest's fsdd:hasField).
+  onStageStart?.('oce');
+  if (excluded) {
+    stages.oce = { status: 'gate', gateReason: 'Not reached -- the frame was excluded at the SSM front.' };
+  } else {
+    const status = row.dictionary['fsdd:datasetStatus'];
+    const verdict = status === 'succeeds'
+      ? 'SUCCEEDS'
+      : (row.outcome === 'absent' ? 'INCOMPLETE (a constitutive role is empty -> ICE)' : String(status || 'unadjudicated').toUpperCase());
+    stages.oce = { status: 'done', shared: true, verdict, datasetStatus: status, outcome: row.outcome };
+  }
+  onStageDone?.('oce', stages.oce);
+
+  // PRODUCT: the same FSDD manifest, via the same emit() bytes (wrapped for the existing FSDD panel).
+  onStageStart?.('fsdd');
+  stages.fsdd = { status: (row && row.dictionary) ? 'done' : 'stopped', result: wrapForFsddPanel(row) };
+  onStageDone?.('fsdd', stages.fsdd);
+
+  return { stages, inputMode, resolved };
 }

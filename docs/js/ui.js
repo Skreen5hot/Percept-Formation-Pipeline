@@ -1,9 +1,10 @@
-import { run } from './runner.js';
+import { run, runStar } from './runner.js';
 import { SAMPLE_CSV, MISLABELED_CSV, DIRTY_CSV, CLINICAL_CSV, DISPUTED_CSV } from './sample.js';
+import { STAR_SAMPLES } from './ssm.js';
 
 const $ = (id) => document.getElementById(id);
-const BUILT = ['snp', 'bibss', 'sas', 'binder', 'oce', 'fandaws', 'fsdd'];
-const ALL = ['snp', 'bibss', 'sas', 'binder', 'oce', 'dknp', 'fandaws'];
+const BUILT = ['snp', 'bibss', 'sas', 'ssm', 'binder', 'oce', 'fandaws', 'fsdd'];
+const ALL = ['snp', 'bibss', 'sas', 'ssm', 'binder', 'oce', 'dknp', 'fandaws'];
 const TYPES = ['null', 'boolean', 'integer', 'number', 'string'];
 const EMDASH = String.fromCharCode(0x2014);  // em-dash, ASCII-safe source -> no mojibake
 
@@ -142,7 +143,40 @@ const callbacks = {
       const diags = st.diagnostics || [];
       if (diags.length) body.appendChild(note('diagnostics: '
         + diags.map((d) => d.code + (d.field ? ':' + d.field : '')).join(', '), 'edge-note'));
+    } else if (id === 'ssm') {
+      // STRUCTURED-SOURCE FRONT: FK -> role resolution, then convergence into a flat frame for the shared core.
+      if (st.status !== 'done') {
+        dagClass('ssm', 'stopped'); setBadge('ssm', 'Stopped', 'stopped-b');
+        body.innerHTML = ''; body.appendChild(note('SSM front produced no result.', 'stopmark')); return;
+      }
+      dagClass('ssm', 'done'); setBadge('ssm', 'Done', 'done-b');
+      body.innerHTML = '';
+      body.appendChild(note('Structured-source front ' + EMDASH + ' each foreign key resolved to its dimension '
+        + 'row and bound to a role in ' + st.recordConcept + '. Outcome: ' + String(st.outcome).toUpperCase()
+        + '. The resolved roles converge into a flat frame proposal handed to the SAME shared Binder the raw '
+        + 'front uses (different door, same core).'));
+      body.appendChild(table(['FK column', 'Role', '-> Dimension', 'Relatum concept', 'Value', 'Resolution'],
+        (st.roleResolutions || []).map((r) => [r.fkColumn, r.role, r.refTable, r.relatumConcept, String(r.fkValue ?? 'null'), r.note])));
+      if ((st.roleDefects || []).length) body.appendChild(note('roleDefects: '
+        + st.roleDefects.map((d) => String(d.role) + ' (' + ((d.diagnostic && d.diagnostic.reason) || '') + ')').join(', '), 'edge-note'));
+      if ((st.capMarkers || []).length) body.appendChild(note('capMarkers: '
+        + st.capMarkers.map((c) => c.fk + ' cap ' + c.cap + '/' + c.actual + ' (' + c.axis + ')').join(', '), 'edge-note'));
     } else if (id === 'binder') {
+      // star path: the Binder is the labeled CONVERGENCE -- the same engine, fed a pre-bound flat frame.
+      if (st.status === 'gate') {
+        dagClass('binder', 'stopped'); setBadge('binder', 'Gate', 'gate-b');
+        body.innerHTML = ''; body.appendChild(note(st.gateReason || 'not reached', 'gate')); return;
+      }
+      if (st.shared) {
+        dagClass('binder', 'done'); setBadge('binder', 'Done', 'done-b');
+        const p = st.proposal || {}; const rb = p.roleBindings || [];
+        body.innerHTML = '';
+        body.appendChild(note('Convergence point ' + EMDASH + ' the structured front pre-bound ' + rb.length
+          + ' roles into a flat ' + p.recordConcept + ' frame proposal; the SAME shared Binder receives it (the '
+          + 'raw front feeds the identical Binder). This is where any source kind becomes one semantic representation.'));
+        body.appendChild(table(['Role', 'Relatum concept', 'Field'], rb.map((b) => [b.role, b.relatumConcept, b.fieldId])));
+        return;
+      }
       dagClass('binder', 'done'); setBadge('binder', 'Done', 'done-b');
       const prop = st.proposal || {};
       const proposals = prop['bind:proposals'] || [];
@@ -179,6 +213,15 @@ const callbacks = {
         body.innerHTML = ''; body.appendChild(note(st.gateReason || 'not reached', 'gate'));
         return;
       }
+      if (st.shared) {
+        dagClass('oce', 'done'); setBadge('oce', 'Done', 'done-b');
+        body.innerHTML = '';
+        body.appendChild(note('Shared OCE firewall (the same byte-identical engine) ' + EMDASH + ' verdict '
+          + st.verdict + '. Deterministic adjudication of the flat frame against the constitutive law; the '
+          + 'per-role justification (each constitutive necessity, met or openly empty, with the deciding axiom) '
+          + 'is carried in the Adjudication Manifest below.'));
+        return;
+      }
       dagClass('oce', 'done'); setBadge('oce', 'Done', 'done-b');
       const j = st.judgment || {};
       body.innerHTML = '';
@@ -202,11 +245,11 @@ const callbacks = {
       const r = st.result;
       body.innerHTML = '';
       if (!r || !r.ok) {
-        setBadge('fsdd', 'No artifact', 'stopped-b');
+        dagClass('fsdd', 'stopped'); setBadge('fsdd', 'No artifact', 'stopped-b');
         body.appendChild(note('No dictionary emitted (no SAS percept, or structural invalidity).', 'stopmark'));
         return;
       }
-      setBadge('fsdd', 'Emitted', 'done-b');
+      dagClass('fsdd', 'done'); setBadge('fsdd', 'Emitted', 'done-b');
       const d = r.dictionary;
       // datasetStatus is an ADJUDICATION verdict; a declined binding was never adjudicated, so the degraded
       // dict carries no status key -- render that honestly rather than the literal "undefined".
@@ -304,11 +347,24 @@ const callbacks = {
   },
 };
 
+function setFront(which) {
+  const raw = $('front-raw'), star = $('front-star');
+  if (raw) { raw.classList.toggle('active', which === 'raw'); raw.classList.toggle('dim', which !== 'raw'); }
+  if (star) { star.classList.toggle('active', which === 'star'); star.classList.toggle('dim', which !== 'star'); }
+}
+
 async function execute(raw) {
   clearState();
+  setFront('raw');
   await run(raw, callbacks);
-  // SNP -> BIBSS -> SAS -> Binder -> OCE runs to an adjudicated verdict (Fandaws consulted; ALS terminal,
-  // out of scope). On a Binder decline, the Binder panel shows the decline and OCE is not reached.
+  // raw-bytes front: SNP -> BIBSS -> SAS form the percept; the shared Binder -> OCE -> FSDD core adjudicates.
+}
+
+async function executeStar(factRows) {
+  clearState();
+  setFront('star');
+  await runStar(factRows, callbacks);
+  // structured-source front: SSM resolves FKs + binds roles; the SAME shared Binder -> OCE -> FSDD core adjudicates.
 }
 
 function switchTab(which) {
@@ -324,5 +380,8 @@ $('btn-mislabeled').addEventListener('click', () => execute(MISLABELED_CSV));
 $('btn-clinical').addEventListener('click', () => execute(CLINICAL_CSV));
 $('btn-disputed').addEventListener('click', () => execute(DISPUTED_CSV));
 $('btn-run').addEventListener('click', () => execute($('adhoc-text').value || ''));
+$('btn-star-clean').addEventListener('click', () => executeStar(STAR_SAMPLES.clean.factRows));
+$('btn-star-ice').addEventListener('click', () => executeStar(STAR_SAMPLES.ice.factRows));
+$('btn-star-orphan').addEventListener('click', () => executeStar(STAR_SAMPLES.orphan.factRows));
 $('tab-sample').addEventListener('click', () => switchTab('sample'));
 $('tab-adhoc').addEventListener('click', () => switchTab('adhoc'));

@@ -84,6 +84,15 @@ td{padding:.2rem .5rem;border-bottom:1px solid #21262d;color:#8b949e}
 .taint-legend .lg.absent{opacity:.38}
 .taint-legend .lg.off{opacity:.38;font-style:italic}
 .taint-legend .lg.seen{font-weight:700}
+/* converging fronts -- co-equal percept-formation fronts (raw bytes, structured source) feeding one shared core */
+.dag-fronts{display:flex;flex-direction:column;gap:.6rem;margin-bottom:.4rem}
+.dag-front{border:1px solid #30363d;border-radius:6px;padding:.6rem .8rem;transition:opacity .2s,border-color .2s}
+.dag-front-label{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#6e7681;margin-bottom:.5rem}
+.dag-front-note{font-size:.63rem;color:#6e7681;font-style:italic;margin-top:.4rem}
+.dag-front.active{border-color:#388bfd;background:#0c1626}
+.dag-front.dim{opacity:.4}
+.dag-front-future{border-style:dashed;opacity:.55}
+.dag-converge{text-align:center;font-size:.66rem;color:#8b949e;font-style:italic;margin:.45rem 0;letter-spacing:.02em}
 </style>
 </head>
 <body>
@@ -104,6 +113,12 @@ td{padding:.2rem .5rem;border-bottom:1px solid #21262d;color:#8b949e}
 <button class="btn clin" id="btn-clinical">Load Clinical Sample (derives) &amp; Run</button>
 <button class="btn disp" id="btn-disputed">Load Disputed Sample (declines) &amp; Run</button>
 <p class="hint">Three points on the honesty ladder. <b>Dirty</b>: a driver column of mixed string/numeric ids &mdash; bound and met, yet flagged uncertain (usable, correct, shaky). <b>Mislabeled</b>: two vehicle columns and no driver &mdash; the adjudicator rejects the forced agent mapping and names the law. <b>Clinical</b>: a glucose table under a second law &mdash; the dictionary derives the unwitnessed performer, instrument, and (by inherence, from the value itself) the specimen. <b>Disputed</b>: a transaction that is honestly both a sale and a purchase &mdash; the adjudicator declines to choose, records both, and lights L4.</p>
+<div style="margin-top:.6rem;padding-top:.6rem;border-top:1px solid #21262d">
+<button class="btn" id="btn-star-clean">Load Star Schema (Northwind) &amp; Run</button>
+<button class="btn warn" id="btn-star-ice">Star: missing order_date (ICE) &amp; Run</button>
+<button class="btn alt" id="btn-star-orphan">Star: orphan customer (excluded) &amp; Run</button>
+<p class="hint">Structured-source front (Phase 2): a star schema (a fact table + dimensions + a human-ratified mapping) instead of raw bytes. The SSM front resolves each foreign key to its dimension row and binds it to a role, then hands the flat <b>ActOfOrdering</b> frame to the SAME Binder &rarr; OCE &rarr; FSDD core the raw samples use &mdash; same manifest, different door. <b>Northwind</b>: a 9-role star (date played in 3 roles) resolves clean. <b>missing order_date</b>: a constitutive role is empty &rarr; ICE (honest incompleteness, not a guess). <b>orphan customer</b>: a constitutive FK dangles &rarr; the whole frame is excluded and named.</p>
+</div>
 </div>
 <div id="pane-adhoc" class="tab-pane">
 <textarea id="adhoc-text" placeholder="Paste CSV or JSON..."></textarea>
@@ -114,8 +129,10 @@ td{padding:.2rem .5rem;border-bottom:1px solid #21262d;color:#8b949e}
 <section class="dag-section">
 <div class="dag-wrapper">
 <div class="dag-bands">
-<div class="dag-band">
-<div class="dag-band-label">Percept Formation</div>
+<div class="dag-band-label">Percept-formation fronts &mdash; source-kind-swappable, converging on one shared core</div>
+<div class="dag-fronts">
+<div class="dag-front active" id="front-raw">
+<div class="dag-front-label">front: raw bytes (CSV / JSON)</div>
 <div class="dag-row">
 <div class="dag-node" id="dag-snp">SNP<span class="nb built">Built</span></div>
 <div class="dag-arr">&rarr;</div>
@@ -128,15 +145,31 @@ td{padding:.2rem .5rem;border-bottom:1px solid #21262d;color:#8b949e}
 <span class="fl">&mdash; feeder &mdash;&rarr; Binder</span>
 </div>
 </div>
+<div class="dag-front" id="front-star">
+<div class="dag-front-label">front: structured source (star schema)</div>
+<div class="dag-row">
+<div class="dag-node" id="dag-ssm">SSM<span class="nb built">Built</span></div>
+<span class="fl">FK-resolve &middot; role-bind &mdash;&rarr; Binder</span>
+</div>
+<div class="dag-front-note">structured-source perception (Phase 2) &mdash; forms the percept from an already-structured source</div>
+</div>
+<div class="dag-front dag-front-future">
+<div class="dag-front-label">more fronts</div>
+<div class="dag-front-note">snowflake, graph &mdash; planned; each plugs into the same convergence</div>
+</div>
+</div>
+<div class="dag-converge">&darr;&nbsp; convergence: any front's formed percept becomes a flat frame proposal &nbsp;&darr;</div>
 <div class="dag-band">
-<div class="dag-band-label">Synthesis</div>
+<div class="dag-band-label">Shared core &mdash; every front</div>
 <div class="dag-row">
 <div class="dag-node" id="dag-binder">Binder<span class="nb built">Built</span></div>
 <div class="dag-arr">&rarr;</div>
 <div class="dag-node" id="dag-oce">OCE<span class="nb built">Built</span></div>
+<div class="dag-arr">&rarr;</div>
+<div class="dag-node" id="dag-fsdd">FSDD<span class="nb built">Built</span></div>
 </div>
+<p class="dag-scope">Fandaws consulted; ALS and downstream out of scope.</p>
 </div>
-<p class="dag-scope">ALS and downstream are out of scope.</p>
 </div>
 <div class="dag-consulted">
 <div class="dag-consulted-title">Consulted Resource</div>
@@ -147,7 +180,7 @@ td{padding:.2rem .5rem;border-bottom:1px solid #21262d;color:#8b949e}
 </section>
 
 <section class="panels-section">
-<h2>Pipeline Stages</h2>
+<h2>Front: raw bytes (SNP &rarr; BIBSS &rarr; SAS)</h2>
 <details id="panel-snp" open>
 <summary>SNP &mdash; Semantic Normalization Proxy<span class="badge idle" id="badge-snp">idle</span></summary>
 <div class="panel-body" id="body-snp"></div>
@@ -160,6 +193,14 @@ td{padding:.2rem .5rem;border-bottom:1px solid #21262d;color:#8b949e}
 <summary>SAS &mdash; Schema Alignment Service<span class="badge idle" id="badge-sas">idle</span></summary>
 <div class="panel-body" id="body-sas"></div>
 </details>
+
+<h2>Front: structured source (SSM)</h2>
+<details id="panel-ssm" open>
+<summary>SSM &mdash; Structured-Source Mapping (star &rarr; resolved roles)<span class="badge idle" id="badge-ssm">idle</span></summary>
+<div class="panel-body" id="body-ssm"></div>
+</details>
+
+<h2>Shared core (every front)</h2>
 <details id="panel-binder" open>
 <summary>Binder &mdash; Semantic Binder (SFB)<span class="badge idle" id="badge-binder">idle</span></summary>
 <div class="panel-body" id="body-binder"></div>
