@@ -18,7 +18,29 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # OUTPUT-FIDELITY AUDIT -- the Auditor gate. The deploy job depends on this, so the site publishes ONLY if
+  # every emitted artifact's claims are witnessed (the claim-ledger) AND the suite asserts those claims. This
+  # is enforcement inside the only path to publish, default-deny: a manifest that would say something it cannot
+  # witness blocks the deploy. The audit.test step also proves the Auditor itself is non-vacuous (flags the
+  # pre-fix bug, passes the fixed output), so a regression to a hollow gate also denies the deploy.
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Auditor acceptance (non-vacuous -- flags the pre-fix bug, passes the fix)
+        run: node docs/js/audit/audit.test.mjs
+      - name: Output-fidelity gate (every emitted manifest's claims are witnessed)
+        run: node docs/js/audit/gate.mjs
+      - name: Capstone smoke (field-content assertions)
+        run: node docs/js/vendor/ssm/test/capstone.smoke.mjs
+      - name: runStar verify (functional layer)
+        run: node docs/js/vendor/ssm/test/runstar.verify.mjs
+
   deploy:
+    needs: audit
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
