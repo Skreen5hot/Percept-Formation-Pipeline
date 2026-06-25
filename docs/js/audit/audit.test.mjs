@@ -6,8 +6,8 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { audit } from './auditor.mjs';
-import { FSDD_LEDGER } from './claim-ledger.mjs';
+import { audit, completeness } from './auditor.mjs';
+import { FSDD_LEDGER, FSDD_EXEMPT } from './claim-ledger.mjs';
 import { runStar } from '../runner.js';
 import { STAR_SAMPLES, STAR_NORTHWIND } from '../ssm.js';
 
@@ -57,6 +57,29 @@ ok(/bibss\|sas/.test(smoke) && /structured-source/.test(smoke), 'test-adequacy: 
 ok(/cf\.length === 10/.test(smoke), 'test-adequacy: smoke asserts field count incl. accidentals (FIELD-4)');
 ok(/groundedConcept/.test(smoke), 'test-adequacy: smoke asserts role semantics (FIELD-5)');
 ok(/datasetTaint.*L1/.test(smoke), 'test-adequacy: smoke asserts dataset taint level (TAINT-3)');
+
+// CAP-A -- witnessed exceptions. A self-granted L4 (taint bumped with no witnessed dispute) is FLAGGED; a
+// witnessed dispute (status 'disputed' + >=2 candidates) PASSES. The manifest cannot grant itself L4.
+const SELF_GRANTED_L4 = {
+  '@type': 'fsdd:SemanticDataDictionary', 'fsdd:datasetStatus': 'succeeds', 'fsdd:datasetTaint': 'L4', 'fsdd:disputed': [],
+  'fsdd:hasField': [{ '@type': 'fsdd:DataField', 'fsdd:column': 'x', 'fsdd:taintDerivation': ['structured-source:fk-resolved->L1'], 'fsdd:taintLevel': 'L1' }],
+};
+ok(audit(SELF_GRANTED_L4, { sourceKind: 'structured' }, FSDD_LEDGER).rulings.find((r) => r.id === 'TAINT-3-dataset-witnessed' && !r.ok),
+  'CAP-A: TAINT-3 flags a self-granted L4 (no witnessed dispute)');
+const WITNESSED_L4 = {
+  '@type': 'fsdd:SemanticDataDictionary', 'fsdd:datasetStatus': 'disputed', 'fsdd:datasetTaint': 'L4',
+  'fsdd:disputed': [{ 'fsdd:candidates': [{ 'fsdd:frame': 'fan:ActOfSale' }, { 'fsdd:frame': 'fan:ActOfPurchase' }] }],
+  'fsdd:hasField': [{ '@type': 'fsdd:DataField', 'fsdd:column': 'x', 'fsdd:taintDerivation': ['structured-source:fk-resolved->L1'], 'fsdd:taintLevel': 'L1' }],
+};
+ok(audit(WITNESSED_L4, { sourceKind: 'structured' }, FSDD_LEDGER).rulings.find((r) => r.id === 'TAINT-3-dataset-witnessed' && r.ok),
+  'CAP-A: TAINT-3 passes a witnessed dispute (status disputed + >=2 candidates)');
+
+// CAP-B mechanism -- completeness must report an assertion the ledger does not witness, never silently pass it.
+// (The FSDD ledger is not yet COMPLETE: claims for the uncovered set await ratification. This proves the
+// MECHANISM works, not CAP-B-ok; CAP-B is wired into the gate only once the ledger covers the artifact.)
+const comp = completeness(stages.fsdd.result.dictionary, FSDD_LEDGER, FSDD_EXEMPT);
+ok(comp.covered.includes('fsdd:datasetStatus') && comp.covered.includes('fsdd:hasField[].fsdd:role'), 'CAP-B mechanism: known claims register as covered');
+ok(comp.uncovered.includes('fsdd:dictionaryVersion'), 'CAP-B mechanism: an uncovered assertion is reported, not silently passed');
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
