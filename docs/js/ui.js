@@ -338,7 +338,7 @@ const callbacks = {
       const row = document.createElement('p');
       row.appendChild(dl('Download dictionary (canonical JSON-LD)', r.canonical, 'semantic-data-dictionary.jsonld'));
       if (r.standardsPureCanonical)
-        row.appendChild(dl('Download standards-pure envelope (DCAT/PROV; field CSVW view in v1.3)', r.standardsPureCanonical, 'dictionary-standards-pure.jsonld'));
+        row.appendChild(dl('Download standards-pure envelope (envelope only -- fields not yet dual-encoded in CSVW)', r.standardsPureCanonical, 'dictionary-standards-pure.jsonld'));
       body.appendChild(row);
       const diags = (r.diagnostics || []).map((x) => x.code);
       if (diags.length) body.appendChild(note('diagnostics: ' + diags.join(', '), 'edge-note'));

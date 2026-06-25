@@ -35,21 +35,30 @@ export function buildField(record, lawRegistry, config = {}) {
 
   const semanticType = semanticTypeSource ? semanticTypeLocalName(semanticTypeSource) : null;
 
+  // STRUCTURED-SOURCE FRONT (SSM): the field's taint provenance is FK-resolution against a declared dimension
+  // (a bound role) or a declared residual column -- NOT bibss distribution / sas consensus, which never ran on
+  // a structured source. Honest first-class provenance, not raw-stage taint borrowed. (Bounded: only when the
+  // record is marked structured; the raw path is unchanged below, byte-identical.)
   let bibss = null;
-  if (record.cismField) {
-    const dist = typeDistribution || {};
-    const activeKeys = Object.keys(dist).filter(k => dist[k] > 0);
-    bibss = { floor: activeKeys.length === 1 ? 'L1' : 'L2', why: 'distribution' };
-  }
-
   let sas = null;
-  if (record.sasField) {
-    if (consensus === '1.000000') {
-      sas = { floor: 'L1', why: 'consensus 1.0' };
-    } else if (semanticType === 'Unknown' || alignmentRule === 'unknown-assignment') {
-      sas = { floor: 'L4', why: 'unknown' };
-    } else {
-      sas = { floor: 'L2', why: 'consensus<1' };
+  let ssm = null;
+  if (record.sourceKind === 'structured') {
+    ssm = { floor: 'L1', why: record.bindingEvidence ? 'fk-resolved' : 'declared' };
+  } else {
+    if (record.cismField) {
+      const dist = typeDistribution || {};
+      const activeKeys = Object.keys(dist).filter(k => dist[k] > 0);
+      bibss = { floor: activeKeys.length === 1 ? 'L1' : 'L2', why: 'distribution' };
+    }
+
+    if (record.sasField) {
+      if (consensus === '1.000000') {
+        sas = { floor: 'L1', why: 'consensus 1.0' };
+      } else if (semanticType === 'Unknown' || alignmentRule === 'unknown-assignment') {
+        sas = { floor: 'L4', why: 'unknown' };
+      } else {
+        sas = { floor: 'L2', why: 'consensus<1' };
+      }
     }
   }
 
@@ -57,7 +66,7 @@ export function buildField(record, lawRegistry, config = {}) {
   const oce = status === 'violated' ? { floor: 'L5', why: 'violated' } : null;
 
   const taintResult = fieldTaint(
-    { bibss, sas, binder, oce },
+    { ssm, bibss, sas, binder, oce },
     { probabilisticBump: !!config.probabilisticTaintBump }
   );
 

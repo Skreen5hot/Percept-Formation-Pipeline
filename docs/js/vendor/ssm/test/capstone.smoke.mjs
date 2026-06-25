@@ -52,6 +52,28 @@ assert(clean && clean.outcome === 'resolved' && clean.dictionary && clean.dictio
     && (!clean.capMarkers || clean.capMarkers.length === 0),
   'clean 9-role star (date_dim x3 role-played) -> SUCCEEDS against the real law via the SHARED OCE/FSDD, no spurious defects');
 
+// FIELD-CONTENT (the deploy-gate honesty check) -- the manifest must say TRUE things, not just produce output.
+const cd = clean.dictionary;
+const cf = cd['fsdd:hasField'] || [];
+const byCol = Object.fromEntries(cf.map((f) => [f['fsdd:column'], f]));
+assert(cf.length === 10, `field-content: all 9 roles + order_id present (got ${cf.length}) -- accidentals not dropped`);
+assert(cf.every((f) => (f['fsdd:taintDerivation'] || []).every((s) => !/^(bibss|sas):/.test(s))),
+  'provenance honesty (F1): NO field attributes taint to bibss/sas -- stages the star path never runs');
+assert(cf.every((f) => (f['fsdd:taintDerivation'] || []).every((s) => /^structured-source:/.test(s))),
+  'provenance (F1): every field carries structured-source (FK-resolution) provenance');
+assert(cd['fsdd:datasetTaint'] === 'L1', 'taint level (F1): clean structured-source resolution is L1, not a spurious L2');
+for (const [col, role, relatum, fulfilled] of [
+  ['customer_key', 'hasCustomer', 'fan:Customer', true], ['product_key', 'hasProduct', 'fan:Product', true], ['order_date_key', 'orderOccupies', 'fan:Date', true],
+  ['employee_key', 'hasEmployee', 'fan:Employee', false], ['supplier_key', 'hasSupplier', 'fan:Supplier', false], ['shipper_key', 'hasShipper', 'fan:Shipper', false],
+  ['ship_info_key', 'hasShipInfo', 'fan:ShipInfo', false], ['required_date_key', 'requiredOccupies', 'fan:Date', false], ['shipped_date_key', 'shippedOccupies', 'fan:Date', false],
+]) {
+  const f = byCol[col];
+  assert(f && String(f['fsdd:role']).includes(role) && f['fsdd:groundedConcept'] && f['fsdd:groundedConcept']['@id'] === relatum,
+    `field ${col} (F3): carries role ${role} + relatum ${relatum}`);
+  assert(f && (fulfilled ? f['fsdd:fulfillmentStatus'] === 'fulfilled' : f['fsdd:fulfillmentStatus'] === 'n/a'),
+    `field ${col} (F2/F3): ${fulfilled ? 'constitutive FULFILLED' : 'accidental bound, n/a'}`);
+}
+
 const noOrderDate = run([{ ...FULL, order_date_key: null }])[0];
 assert(noOrderDate && noOrderDate.outcome === 'absent' && ice(noOrderDate).length >= 1,
   'role-play constitutive: NULL order_date (orderOccupies) -> incomplete + ICE');

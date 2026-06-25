@@ -6,8 +6,12 @@ export function maxLevel(a, b) {
 
 export function fieldTaint(signals = {}, opts = {}) {
   const entries = [];
-  const { bibss, sas, binder, oce } = signals;
+  const { ssm, bibss, sas, binder, oce } = signals;
 
+  // structured-source front (SSM): a field's provenance is FK-resolution against a declared dimension (or a
+  // declared residual column), NOT raw-bytes inference -- a first-class source, never laundered through
+  // bibss/sas. Additive: raw-path callers pass no ssm signal, so entries/derivation are byte-identical.
+  if (ssm != null)  entries.push({ stage: 'structured-source', floor: ssm.floor, why: ssm.why });
   if (bibss != null) entries.push({ stage: 'bibss', floor: bibss.floor, why: bibss.why });
   if (sas != null)   entries.push({ stage: 'sas',   floor: sas.floor,   why: sas.why });
   if (binder != null) entries.push({ stage: 'binder', floor: binder.floor, why: binder.why });

@@ -53,6 +53,7 @@ export function emit(input) {
     for (const record of records) {
       record.lawHash = lawHash;
       record.requiresReview = requiresReview;
+      record.sourceKind = input.sourceKind;   // 'structured' -> FK-resolution provenance (additive; raw passes none)
       const result = buildField(record, lawRegistry, cfg);
       fields.push(result.field);
       diagnostics.push(...(result.diagnostics ?? []));

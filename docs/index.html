@@ -115,10 +115,9 @@ td{padding:.2rem .5rem;border-bottom:1px solid #21262d;color:#8b949e}
 <button class="btn disp" id="btn-disputed">Load Disputed Sample (declines) &amp; Run</button>
 <p class="hint">Three points on the honesty ladder. <b>Dirty</b>: a driver column of mixed string/numeric ids &mdash; bound and met, yet flagged uncertain (usable, correct, shaky). <b>Mislabeled</b>: two vehicle columns and no driver &mdash; the adjudicator rejects the forced agent mapping and names the law. <b>Clinical</b>: a glucose table under a second law &mdash; the dictionary derives the unwitnessed performer, instrument, and (by inherence, from the value itself) the specimen. <b>Disputed</b>: a transaction that is honestly both a sale and a purchase &mdash; the adjudicator declines to choose, records both, and lights L4.</p>
 <div style="margin-top:.6rem;padding-top:.6rem;border-top:1px solid #21262d">
-<div class="uncertainmark" style="margin-bottom:.5rem">Structured-source (star) path: <b>temporarily disabled</b> &mdash; a provenance-accuracy fix is in progress. The emitted dictionary was recording field-level taint provenance through the raw-path stages (BIBSS/SAS), which the star path does not run. The raw-bytes samples above are unaffected.</div>
-<button class="btn" id="btn-star-clean" disabled>Load Star Schema (Northwind) &amp; Run</button>
-<button class="btn warn" id="btn-star-ice" disabled>Star: missing order_date (ICE) &amp; Run</button>
-<button class="btn alt" id="btn-star-orphan" disabled>Star: orphan customer (excluded) &amp; Run</button>
+<button class="btn" id="btn-star-clean">Load Star Schema (Northwind) &amp; Run</button>
+<button class="btn warn" id="btn-star-ice">Star: missing order_date (ICE) &amp; Run</button>
+<button class="btn alt" id="btn-star-orphan">Star: orphan customer (excluded) &amp; Run</button>
 <p class="hint">Structured-source front (Phase 2): a star schema (a fact table + dimensions + a human-ratified mapping) instead of raw bytes. The SSM front resolves each foreign key to its dimension row and binds it to a role, then hands the flat <b>ActOfOrdering</b> frame to the SAME Binder &rarr; OCE &rarr; FSDD core the raw samples use &mdash; same manifest, different door. <b>Northwind</b>: a 9-role star (date played in 3 roles) resolves clean. <b>missing order_date</b>: a constitutive role is empty &rarr; ICE (honest incompleteness, not a guess). <b>orphan customer</b>: a constitutive FK dangles &rarr; the whole frame is excluded and named.</p>
 </div>
 </div>
@@ -153,7 +152,7 @@ td{padding:.2rem .5rem;border-bottom:1px solid #21262d;color:#8b949e}
 <div class="dag-node" id="dag-ssm">SSM<span class="nb built">Built</span></div>
 <span class="fl">FK-resolve &middot; role-bind &mdash;&rarr; Binder</span>
 </div>
-<div class="dag-front-note">structured-source perception (Phase 2) &mdash; forms the percept from an already-structured source <b>(temporarily disabled &mdash; provenance fix in progress)</b></div>
+<div class="dag-front-note">structured-source perception (Phase 2) &mdash; forms the percept from an already-structured source</div>
 </div>
 <div class="dag-front dag-front-future">
 <div class="dag-front-label">more fronts</div>

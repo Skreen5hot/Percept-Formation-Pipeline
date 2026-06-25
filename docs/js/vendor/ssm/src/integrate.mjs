@@ -86,6 +86,25 @@ function runPipeline(ssm, factRow, dimsData, query, factTableKey, law, scope, le
   // C1 accidental-dangling: detect local role defects before assembly (invariant #3: excluded frames get no roleDefects).
   const roleDefects = detectAccidentalDefects(accidentalRAs, factRow, dimsData);
 
+  // F2 (accidental visibility): bind the accidental roles that RESOLVE so they appear in the dictionary -- bound
+  // and real, just not identity-defining. They are kept OUT of the constitutive necessity adjudication
+  // (lawForOCE below stays constitutive-only), so each carries role + relatum but no necessity (fulfillment
+  // n/a) -- the honest "accidental, resolved" shape. Same businessKey match detectAccidentalDefects uses.
+  const accDimDefs = ssm['ssm:dimensions'] || {};
+  const accidentalBindings = [];
+  for (const ra of accidentalRAs) {
+    const fkValue = factRow[ra['ssm:fkColumn']];
+    if (fkValue === null || fkValue === undefined) continue;
+    const candidates = dimsData[ra['ssm:refTable']] || [];
+    if (candidates.some(c => c.businessKey === fkValue)) {
+      accidentalBindings.push({
+        'bind:fieldId': ra['ssm:fkColumn'],
+        'bind:role': ra['ssm:role'],
+        'bind:relatumConcept': (accDimDefs[ra['ssm:refTable']] || {})['ssm:entityClass'],
+      });
+    }
+  }
+
   const useSSM = accidentalRAs.length > 0 ? {
     ...ssm,
     'ssm:facts': {
@@ -122,17 +141,12 @@ function runPipeline(ssm, factRow, dimsData, query, factTableKey, law, scope, le
     )
   };
 
-  const schemaForEmit = accidentalFkCols.size > 0 ? {
-    ...schema,
-    'viz:hasField': schema['viz:hasField'].filter(f =>
-      !accidentalFkCols.has(f['viz:fieldName'] || '')
-    )
-  } : schema;
-
-  const cismForEmit = accidentalFkCols.size > 0 ? {
-    ...cism,
-    fields: (cism.fields || []).filter(f => !accidentalFkCols.has(f.field || ''))
-  } : cism;
+  // F2: emit over the FULL schema/cism (incl. accidental FK cols) so resolved accidental roles surface as
+  // fields. (residualSchema above still excludes them from the Binder's residual conjecture -- they are bound
+  // explicitly via accidentalBindings, not conjectured.) The accidental fields carry role+relatum but no
+  // constitutive necessity, so they never become OCE necessities or mint ICEs (lawForOCE stays restricted).
+  const schemaForEmit = schema;
+  const cismForEmit = cism;
 
   // C1 invariant #2: restrict the law to constitutive roles only so accidental roles
   // never become OCE necessities and never yield ICEs or make the dict 'incomplete'.
@@ -157,11 +171,19 @@ function runPipeline(ssm, factRow, dimsData, query, factTableKey, law, scope, le
   }
   const j = adjudicate({ law: lawForOCE, proposal: bd.proposal, percept: {} });
 
-  const B = bd.proposal.roleBindings.map(rb => ({
-    'bind:fieldId': rb.fieldId,
-    'bind:role': rb.role,
-    'bind:relatumConcept': rb.relatumConcept
-  }));
+  // F3: the FSDD field-join matches bind:fieldId against the schema's bare viz:fieldName, but the SSM binding
+  // carries qualified fieldIds -> the join missed and role/relatum/fulfillment dropped to n/a. Map each role
+  // back to its declared (bare) column so the join lands. Append the resolved accidental roles (F2).
+  const colByRole = {};
+  for (const ra of roleAssignments) colByRole[ra['ssm:role']] = ra['ssm:fkColumn'] || ra['ssm:discriminatorColumn'];
+  const B = [
+    ...bd.proposal.roleBindings.map(rb => ({
+      'bind:fieldId': colByRole[rb.role] || rb.fieldId,
+      'bind:role': rb.role,
+      'bind:relatumConcept': rb.relatumConcept
+    })),
+    ...accidentalBindings,
+  ];
 
   const binding = {
     '@type': 'bind:BindingProposal',
@@ -172,7 +194,7 @@ function runPipeline(ssm, factRow, dimsData, query, factTableKey, law, scope, le
     }]
   };
 
-  const em = emit({ schema: schemaForEmit, cism: cismForEmit, binding, judgment: j, envelope });
+  const em = emit({ schema: schemaForEmit, cism: cismForEmit, binding, judgment: j, envelope, sourceKind: 'structured' });
 
   return {
     outcome: a.absent.length > 0 ? 'absent' : 'resolved',
