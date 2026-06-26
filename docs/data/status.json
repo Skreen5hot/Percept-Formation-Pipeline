@@ -1,0 +1,15 @@
+{
+  "phase": "2",
+  "components": [
+    { "name": "SNP", "status": "Built", "grade": "verified", "gradeWitness": "IntegratedAgent factory: SNP v1.3 build (PROVEN); vendored at docs/js/vendor/snp" },
+    { "name": "BIBSS", "status": "Built", "grade": "verified", "gradeWitness": "IntegratedAgent factory: BIBSS v1.3 build (PROVEN); vendored at docs/js/vendor/bibss" },
+    { "name": "SAS", "status": "Built", "grade": "verified", "gradeWitness": "IntegratedAgent factory: SAS standalone build, 12 modules VERIFIED-grade, 122 tests" },
+    { "name": "Binder", "status": "Built", "grade": "verified", "gradeWitness": "IntegratedAgent factory: Binder engine build, 16/16 VERIFIED, Appendix-A verified" },
+    { "name": "OCE", "status": "Built", "grade": "verified", "gradeWitness": "IntegratedAgent factory: OCE engine build, 12 modules VERIFIED-grade, 80 tests" },
+    { "name": "FSDD", "status": "Built", "grade": "verified", "gradeWitness": "IntegratedAgent factory: FSDD first-product build, 13 modules VERIFIED-grade, 86 tests" },
+    { "name": "SSM", "status": "Built", "grade": "verified", "gradeWitness": "IntegratedAgent factory: SSM Structured-Source Perception Phase 2, 205/0 incl. the Northwind capstone" },
+    { "name": "Fandaws", "status": "Built", "grade": "verified", "gradeWitness": "IntegratedAgent factory: Fandaws scope adapter (fandaws-scope), built" },
+    { "name": "DKNP", "status": "NotYetBuilt" }
+  ],
+  "scope": { "outOfScope": ["ALS", "downstream"] }
+}

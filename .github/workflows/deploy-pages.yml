@@ -38,6 +38,8 @@ jobs:
         run: node docs/js/vendor/ssm/test/capstone.smoke.mjs
       - name: runStar verify (functional layer)
         run: node docs/js/vendor/ssm/test/runstar.verify.mjs
+      - name: Status-page audit (instance 2 -- the live status manifest's claims are witnessed)
+        run: node docs/js/audit/status-audit.test.mjs
 
   deploy:
     needs: audit
