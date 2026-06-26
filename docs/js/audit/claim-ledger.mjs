@@ -1,21 +1,12 @@
 // THE CLAIM-LEDGER for the FSDD manifest -- instance 1 of the Auditor capability. The Auditor is the OCE's
 // stance turned reflexive: where the OCE adjudicates whether a binding's claims are witnessed by a law, the
-// Auditor adjudicates whether a FACTORY-EMITTED artifact's claims are witnessed by what actually ran. An
-// unwitnessed claim is a violation (the OCE refuses rather than guesses; so does this).
+// Auditor adjudicates whether a FACTORY-EMITTED artifact's claims are witnessed by what actually ran.
 //
-// HUMAN-RATIFIED GROUND TRUTH (Aaron, 2026-06-25). The gate is only as honest as this ledger.
+// HUMAN-RATIFIED GROUND TRUTH (Aaron, 2026-06-25). The contracts (CAP-A/CAP-B) are now ENGINE-structural
+// (see auditor.mjs validateLedger): a ledger cannot EXPRESS a self-granted exception or hide an uncovered
+// truth-claim in exempt. This ledger inherits them; it does not restate them.
 //
-// THREE CAPABILITY contracts every ledger inherits (not PFP-specific):
-//   CAP-A (witnessed exceptions): any claim permitting an exception must require it witnessed by an artifact
-//          the engine can CHECK -- never self-granted. (Instantiated by TAINT-3's witnessed-dispute carve-out.)
-//   CAP-B (completeness is a finding): every artifact assertion is WITNESSED (a claim), EXEMPT (structural/
-//          echo), or WITNESS-DEFERRED (a known truth-claim not yet witnessed -- DISCLOSED, never absorbed into
-//          exempt). Anything in none of the three is a finding. "audit: success" = "nothing unwitnessed".
-//   The THIRD BUCKET (witness-deferred) makes a known-but-unwitnessed truth-claim VISIBLE rather than hidden
-//          in exempt -- absorbing it into exempt is the exact failure CAP-B exists to catch. The gate
-//          default-denies on uncovered OR witness-deferred being non-empty (deferred disclosed).
-//
-// Audit context: { sourceKind: 'structured' | 'raw', expectedRoles?: string[] }
+// Shape: { claims:[...], exempt:[{path, reason}], deferred:[path...] }. Audit context: { sourceKind, expectedRoles? }.
 import { dictionaryHash } from '../vendor/fsdd/src/jcs.mjs';
 
 const SOURCE_PREFIX = /^(structured-source|bibss|sas|binder|oce):/;
@@ -24,7 +15,7 @@ const fields = (d) => d['fsdd:hasField'] || [];
 const LV = ['L0', 'L1', 'L2', 'L3', 'L4', 'L5'];
 const VERDICTS = ['fulfilled', 'violated', 'empty'];
 
-export const FSDD_LEDGER = [
+const CLAIMS = [
   {
     id: 'PROV-1-no-phantom-stage',
     desc: 'A structured-source manifest attributes NO field taint to bibss/sas -- stages that never run on already-structured input. (The exact shipped bug.)',
@@ -45,19 +36,23 @@ export const FSDD_LEDGER = [
   },
   {
     id: 'TAINT-3-dataset-witnessed',
-    desc: 'datasetTaint equals the max field taint -- and may diverge to L4 ONLY on a WITNESSED dispute, never a self-asserted flag (CAP-A).',
+    desc: 'datasetTaint equals the max field taint -- diverging only via the witnessed-dispute exception (CAP-A).',
     covers: ['fsdd:datasetTaint', 'fsdd:disputed'],
     applies: () => true,
     check: (d) => {
       const maxField = fields(d).reduce((m, f) => (LV.indexOf(f['fsdd:taintLevel'] || 'L0') > LV.indexOf(m) ? (f['fsdd:taintLevel'] || 'L0') : m), 'L0');
-      const ds = d['fsdd:datasetTaint'];
-      if (ds === maxField) return [];
-      const disputed = d['fsdd:disputed'] || [];
-      const witnessedDispute = d['fsdd:datasetStatus'] === 'disputed'
-        && disputed.length >= 1
-        && disputed.every((x) => Array.isArray(x['fsdd:candidates']) && x['fsdd:candidates'].length >= 2);
-      if (ds === 'L4' && witnessedDispute) return [];
-      return [`datasetTaint ${ds} != max field taint ${maxField} with no witnessed dispute (status 'disputed' + >=2 candidates) -- unwitnessed or self-granted`];
+      return d['fsdd:datasetTaint'] === maxField ? [] : [`datasetTaint ${d['fsdd:datasetTaint']} != max field taint ${maxField}`];
+    },
+    // G-1/CAP-A: the ONLY way to diverge -- a witnessed exception the ENGINE runs (auditor.mjs owns the path).
+    // The witness is the coherent dispute signature the emit dispute-path produces, not a self-set flag.
+    exception: {
+      desc: 'L4 on a witnessed dispute (datasetStatus disputed + every dispute record carries >=2 candidates)',
+      when: (d) => d['fsdd:datasetTaint'] === 'L4',
+      witness: (d) => {
+        const disputed = d['fsdd:disputed'] || [];
+        return d['fsdd:datasetStatus'] === 'disputed' && disputed.length >= 1
+          && disputed.every((x) => Array.isArray(x['fsdd:candidates']) && x['fsdd:candidates'].length >= 2);
+      },
     },
   },
   {
@@ -74,8 +69,6 @@ export const FSDD_LEDGER = [
   },
   {
     id: 'FIELD-5-role-semantics-present',
-    // PRESENCE, never ADEQUACY (ratified). Refuses a role-bearing field whose grounded concept is structurally
-    // absent; does NOT judge whether the concept is the correct one (a named ceiling -- the semantic tier).
     desc: 'Every role-bearing field carries a grounded concept (PRESENCE only; concept-adequacy is a named ceiling, not checked).',
     covers: ['fsdd:hasField[].fsdd:groundedConcept'],
     applies: () => true,
@@ -93,9 +86,7 @@ export const FSDD_LEDGER = [
   },
   {
     id: 'HASH-7-content-addressed',
-    // LOAD-BEARING. The content hash is the strongest witness in the ledger: it is fully self-checkable, so
-    // tampering ANY content (incl. a claim's own subject) changes the hash and is caught.
-    desc: 'dictionaryVersion is the self-verifying content hash: re-canonicalizing the dictionary (excluding the version key) reproduces it.',
+    desc: 'dictionaryVersion is the self-verifying content hash: re-canonicalizing the dictionary (excluding the version key) reproduces it. (Load-bearing.)',
     covers: ['fsdd:dictionaryVersion'],
     applies: () => true,
     check: (d) => {
@@ -125,9 +116,7 @@ export const FSDD_LEDGER = [
   },
   {
     id: 'AXIOM-9-verdict-cites-axiom',
-    // PRESENCE-AND-WELL-FORMEDNESS (ratified), NOT correctness-of-choice. A verdict must cite a non-empty
-    // deciding axiom; whether that axiom is the RIGHT one is a named ceiling (the semantic tier).
-    desc: 'A field carrying a verdict cites a present, well-formed (non-empty) deciding axiom (not whether the axiom is correct -- a ceiling).',
+    desc: 'A field carrying a verdict cites a present, well-formed (non-empty) deciding axiom (PRESENCE + well-formedness, NOT correctness -- a named ceiling).',
     covers: ['fsdd:hasField[].fsdd:decidingAxiom'],
     applies: () => true,
     check: (d) => fields(d)
@@ -137,7 +126,7 @@ export const FSDD_LEDGER = [
   },
   {
     id: 'TAINTLVL-10-level-matches-derivation',
-    desc: 'Each field taintLevel equals the level its own taintDerivation witnesses (max floor; L0->L1; +1 when proposalSource is probabilistic) -- mirrors the engine, never asserted independently.',
+    desc: 'Each field taintLevel equals the level its own taintDerivation witnesses (max floor; L0->L1; +1 when proposalSource is probabilistic) -- mirrors the engine.',
     covers: ['fsdd:hasField[].fsdd:taintLevel'],
     applies: () => true,
     check: (d) => {
@@ -156,9 +145,7 @@ export const FSDD_LEDGER = [
   },
   {
     id: 'ICE-11-record-not-instance',
-    // LOAD-BEARING. The FSDD's core honesty: an unwitnessed participant becomes a RECORD ABOUT an absent thing,
-    // never a fabricated observed instance. This claim refuses any implicit entity that crosses that line.
-    desc: 'Every implicit entity is an information-content record ABOUT an absent participant (concernsType + derivedFrom); it never asserts an observed instance.',
+    desc: 'Every implicit entity is an information-content record ABOUT an absent participant (concernsType + derivedFrom); it never asserts an observed instance. (Load-bearing.)',
     covers: ['fsdd:hasImplicitEntity'],
     applies: () => true,
     check: (d) => (d['fsdd:hasImplicitEntity'] || [])
@@ -190,7 +177,7 @@ export const FSDD_LEDGER = [
   },
   {
     id: 'REVIEW-14-flag-taint-consistent',
-    desc: 'requiresReview is taint-constrained: a field flagged for review carries a binder review entry in its taint derivation and a level >= L3 (the flag cannot claim review without the taint that witnesses it).',
+    desc: 'requiresReview is taint-constrained: a field flagged for review carries a binder review entry in its taint derivation and a level >= L3.',
     covers: ['fsdd:hasField[].fsdd:requiresReview'],
     applies: () => true,
     check: (d) => fields(d)
@@ -200,23 +187,32 @@ export const FSDD_LEDGER = [
   },
 ];
 
-// EXEMPT -- NOT truth-claims the FSDD originates: structural framing, sub-structure of a witnessed container,
-// or verbatim echoes of upstream inputs. CAP-B requires every assertion to be witnessed, exempt, or
-// witness-deferred; the author consciously classifies each -- an unclassified property is the silent omission.
-export const FSDD_EXEMPT = [
-  '@context', '@type', 'dcterms:title', 'prov:wasAttributedTo',
-  'fsdd:hasField',                                  // structural container (members classified individually)
-  'fsdd:rawInputHash',                              // verbatim echo of schema viz:rawInputHash
-  'fsdd:adjudicatedAgainst[].diagnostic', 'fsdd:adjudicatedAgainst[].ref',  // sub-structure under LAW-12
-  'fsdd:hasField[].@type', 'fsdd:hasField[].fsdd:column',
-  'fsdd:hasField[].fsdd:typeDistribution',          // echo of cism
-  'fsdd:hasField[].csvw:datatype', 'fsdd:hasField[].fsdd:nullable',
-  'fsdd:hasField[].fsdd:semanticType', 'fsdd:hasField[].fsdd:consensus', 'fsdd:hasField[].sas:alignmentRule',
-  'fsdd:hasField[].fsdd:fillerKind', 'fsdd:hasField[].fsdd:convergence', 'fsdd:hasField[].fsdd:confidence',
-  'fsdd:hasField[].fsdd:necessity',                 // the law's relation name (label/echo, not an FSDD-originated claim)
+// EXEMPT (reasoned): NOT truth-claims the FSDD originates. Each entry names WHY -- 'structural' (JSON-LD
+// framing / containers), 'echo' (verbatim pass-through of upstream input), 'sub-structure' (a member of a
+// witnessed container). The engine refuses an exempt without a recognized reason (G-2): you cannot exempt an
+// assertion silently; you must say why it is not a truth-claim.
+const EXEMPT = [
+  { path: '@context', reason: 'structural' },
+  { path: '@type', reason: 'structural' },
+  { path: 'dcterms:title', reason: 'echo' },
+  { path: 'prov:wasAttributedTo', reason: 'echo' },
+  { path: 'fsdd:hasField', reason: 'structural' },
+  { path: 'fsdd:rawInputHash', reason: 'echo' },
+  { path: 'fsdd:adjudicatedAgainst[].diagnostic', reason: 'sub-structure' },
+  { path: 'fsdd:adjudicatedAgainst[].ref', reason: 'sub-structure' },
+  { path: 'fsdd:hasField[].@type', reason: 'structural' },
+  { path: 'fsdd:hasField[].fsdd:column', reason: 'echo' },
+  { path: 'fsdd:hasField[].fsdd:typeDistribution', reason: 'echo' },
+  { path: 'fsdd:hasField[].csvw:datatype', reason: 'echo' },
+  { path: 'fsdd:hasField[].fsdd:nullable', reason: 'echo' },
+  { path: 'fsdd:hasField[].fsdd:semanticType', reason: 'echo' },
+  { path: 'fsdd:hasField[].fsdd:consensus', reason: 'echo' },
+  { path: 'fsdd:hasField[].sas:alignmentRule', reason: 'echo' },
+  { path: 'fsdd:hasField[].fsdd:fillerKind', reason: 'echo' },
+  { path: 'fsdd:hasField[].fsdd:convergence', reason: 'echo' },
+  { path: 'fsdd:hasField[].fsdd:confidence', reason: 'echo' },
+  { path: 'fsdd:hasField[].fsdd:necessity', reason: 'echo' },
 ];
 
-// WITNESS-DEFERRED -- known truth-claims not yet witnessed. The THIRD BUCKET: DISCLOSED, never folded into
-// exempt. Empty here (the FSDD ledger covers its artifact). A non-empty entry BLOCKS the publication gate
-// (default-deny) while remaining visible -- the honest alternative to silently exempting an unwitnessed claim.
-export const FSDD_DEFERRED = [];
+// The FSDD artifact-law. WITNESS-DEFERRED (third bucket) is empty: the ledger covers its artifact.
+export const FSDD_LEDGER = { claims: CLAIMS, exempt: EXEMPT, deferred: [] };

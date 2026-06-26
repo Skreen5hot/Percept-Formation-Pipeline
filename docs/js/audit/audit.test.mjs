@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { audit, completeness } from './auditor.mjs';
-import { FSDD_LEDGER, FSDD_EXEMPT, FSDD_DEFERRED } from './claim-ledger.mjs';
+import { FSDD_LEDGER } from './claim-ledger.mjs';
 import { runStar } from '../runner.js';
 import { STAR_SAMPLES, STAR_NORTHWIND } from '../ssm.js';
 
@@ -114,16 +114,28 @@ ok(fired({ '@type': 'fsdd:SemanticDataDictionary', 'fsdd:adjudicatedAgainst': [{
 ok(fired({ '@type': 'fsdd:SemanticDataDictionary', 'fsdd:hasField': [{ 'fsdd:column': 'x', 'fsdd:requiresReview': true, 'fsdd:taintDerivation': ['structured-source:fk-resolved->L1'], 'fsdd:taintLevel': 'L1' }] }, 'REVIEW-14-flag-taint-consistent'),
   'REVIEW-14 catches requiresReview=true with no witnessing review taint');
 
-// --- CAP-B: the ledger now FULLY covers the artifact; the third bucket blocks + discloses; gaps are found ---
-const compClean = completeness(cleanDict, FSDD_LEDGER, FSDD_EXEMPT, FSDD_DEFERRED);
+// --- CAP-B: the ledger fully covers the artifact; the third bucket blocks + discloses; gaps are found ---
+const compClean = completeness(cleanDict, FSDD_LEDGER);
 ok(compClean.ok && compClean.uncovered.length === 0 && compClean.deferred.length === 0,
-  'CAP-B: the ledger fully covers the artifact (uncovered + deferred empty)' + (compClean.ok ? '' : ' -- uncovered ' + JSON.stringify(compClean.uncovered)));
-const ledgerNoStatus = FSDD_LEDGER.filter((c) => c.id !== 'STATUS-6-recognized');
-const compDeferred = completeness(cleanDict, ledgerNoStatus, FSDD_EXEMPT, ['fsdd:datasetStatus']);
+  'CAP-B: the ledger fully covers the artifact (uncovered + deferred empty)' + (compClean.ok ? '' : ' -- ' + JSON.stringify(compClean.uncovered || compClean.errors)));
+const noStatus = { ...FSDD_LEDGER, claims: FSDD_LEDGER.claims.filter((c) => c.id !== 'STATUS-6-recognized') };
+const compDeferred = completeness(cleanDict, { ...noStatus, deferred: ['fsdd:datasetStatus'] });
 ok(!compDeferred.ok && compDeferred.deferred.includes('fsdd:datasetStatus') && !compDeferred.uncovered.includes('fsdd:datasetStatus'),
   'CAP-B third bucket: a witness-deferred assertion BLOCKS the gate AND is disclosed (not silently uncovered, not exempt)');
-ok(completeness(cleanDict, ledgerNoStatus, FSDD_EXEMPT, FSDD_DEFERRED).uncovered.includes('fsdd:datasetStatus'),
+ok(completeness(cleanDict, noStatus).uncovered.includes('fsdd:datasetStatus'),
   'CAP-B: an unclassified assertion is reported as uncovered, never silently passed');
+
+// --- G-1/G-2 STRUCTURAL: the engine REFUSES a ledger that violates the contracts -- the violations are
+// UNEXPRESSIBLE, not merely discouraged. This is what moves CAP-A/CAP-B from discipline to structure. ---
+const selfGranted = { claims: [{ id: 'X', covers: [], check: () => ['fail'], exception: { when: () => true } }], exempt: [], deferred: [] };
+ok(audit({}, {}, selfGranted).ledgerInvalid === true,
+  'G-1 structural: a self-granted exception (when, no witness) makes the ledger INVALID -- a self-granted exception is unexpressible');
+const unreasoned = { claims: [], exempt: [{ path: 'fsdd:foo' }], deferred: [] };
+ok(completeness({}, unreasoned).ledgerInvalid === true,
+  'G-2 structural: an exempt with no recognized reason makes the ledger INVALID -- cannot exempt an assertion without naming why');
+const doubled = { claims: [{ id: 'Y', covers: ['fsdd:bar'], check: () => [] }], exempt: [{ path: 'fsdd:bar', reason: 'echo' }], deferred: [] };
+ok(audit({}, {}, doubled).ledgerInvalid === true,
+  'G-2 structural: a path both witnessed and exempt makes the ledger INVALID -- incoherent classification refused');
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

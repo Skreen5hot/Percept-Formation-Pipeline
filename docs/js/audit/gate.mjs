@@ -6,7 +6,7 @@
 import { runStar } from '../runner.js';
 import { STAR_SAMPLES, STAR_NORTHWIND } from '../ssm.js';
 import { audit, completeness } from './auditor.mjs';
-import { FSDD_LEDGER, FSDD_EXEMPT, FSDD_DEFERRED } from './claim-ledger.mjs';
+import { FSDD_LEDGER } from './claim-ledger.mjs';
 
 const facts = STAR_NORTHWIND.ssm['ssm:facts'];
 const expectedRoles = facts[Object.keys(facts)[0]]['ssm:roleAssignments'].map((r) => r['ssm:role']);
@@ -31,7 +31,7 @@ for (const [key, sample] of Object.entries(STAR_SAMPLES)) {
 
 // CAP-B: the ledger must COVER the fullest artifact -- nothing unwitnessed silently passed, nothing deferred shipped.
 if (cleanDict) {
-  const comp = completeness(cleanDict, FSDD_LEDGER, FSDD_EXEMPT, FSDD_DEFERRED);
+  const comp = completeness(cleanDict, FSDD_LEDGER);
   if (comp.ok) {
     console.log(`[audit] CAP-B: PASS (${comp.covered.length} witnessed paths; every assertion witnessed or exempt)`);
   } else {
