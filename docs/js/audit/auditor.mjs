@@ -39,15 +39,23 @@ export function enumeratePaths(artifact) {
 // (claim.covers) OR explicitly exempt (structural/echo). Anything in neither set is reported: the artifact
 // claims something no ledger entry witnesses, so "audit: success" would silently overclaim its own scope.
 // This is what makes the gate honest about what it does NOT check -- the failure one level up from a wrong claim.
-export function completeness(artifact, ledger, exempt = []) {
+// CAP-B with the THREE buckets. Every present assertion is WITNESSED (a claim's covers), EXEMPT (structural/
+// echo), or WITNESS-DEFERRED (a known truth-claim not yet witnessed -- DISCLOSED, never absorbed into exempt).
+// Anything in none of the three is `uncovered` (the silent omission). The gate denies on uncovered OR on any
+// witness-deferred actually present: a publication gate cannot ship a known-unwitnessed claim, but it names it
+// rather than hiding it. ok therefore means "nothing unwitnessed", which is what "audit: success" must mean.
+export function completeness(artifact, ledger, exempt = [], deferred = []) {
   const present = enumeratePaths(artifact);
   const covered = new Set(ledger.flatMap((c) => c.covers || []));
   const exemptSet = new Set(exempt);
-  const uncovered = present.filter((p) => !covered.has(p) && !exemptSet.has(p));
+  const deferredSet = new Set(deferred);
+  const uncovered = present.filter((p) => !covered.has(p) && !exemptSet.has(p) && !deferredSet.has(p));
+  const deferredPresent = present.filter((p) => deferredSet.has(p));
   return {
-    ok: uncovered.length === 0,
+    ok: uncovered.length === 0 && deferredPresent.length === 0,
     present,
     covered: [...covered].sort(),
-    uncovered,
+    deferred: deferredPresent,   // disclosed: known truth-claims not yet witnessed (must be empty to publish)
+    uncovered,                   // silent omissions: assertions in no bucket (must be empty to publish)
   };
 }
