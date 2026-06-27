@@ -344,19 +344,35 @@ const callbacks = {
       if (diags.length) body.appendChild(note('diagnostics: ' + diags.join(', '), 'edge-note'));
     } else if (id === 'gm') {
       // TRANSFORM/LOAD: the Adjudication Manifest projected to a faithful RDF graph under M. The panel shows the
-      // EMITTED graph (turtle) as the artifact -- not merely that a graph was produced.
-      dagClass('gm', 'done'); setBadge('gm', 'Materialized', 'done-b');
+      // EMITTED graph (turtle) as the artifact -- not merely that a graph was produced. Both fronts render here:
+      // the star front (per-fact-row frames, witnessed-IRI frames) and the raw front (per-row blank-node frames).
       body.innerHTML = '';
-      const perRow = st.perRow || [];
+      if (st.status === 'gate') {   // raw front declined / disputed -- honest gate, not a fabricated graph
+        dagClass('gm', 'stopped'); setBadge('gm', 'Gate', 'gate-b');
+        body.appendChild(note(st.gateReason || 'not reached', 'gate'));
+        return;
+      }
+      dagClass('gm', 'done'); setBadge('gm', 'Materialized', 'done-b');
       const nT = (st.triples || []).length;
-      body.appendChild(note('Graph Materialization (the T and L of ETL) ' + EMDASH + ' the Adjudication Manifest '
-        + 'projected to a faithful RDF graph under M. Every role lands in exactly one of four honest outcomes: '
-        + 'resolved becomes a witnessed-identity node (coreferent because the key is real); constitutive-absent '
-        + 'becomes an ImplicitEntityRecord (ABOUT the missing type, never an instance of it); accidental-broken '
-        + 'becomes an UnresolvedRole (the broken reference is IN the graph, not silently dropped); frame-excluded '
-        + 'never materializes as a valid frame (its reason names every constitutive dangler). ' + nT + ' triples.'));
-      body.appendChild(table(['Frame', 'Outcome', 'Triples'],
-        perRow.map((r) => ['ord-' + ((r.row && r.row.order_id) ?? '?'), String(r.outcome).toUpperCase(), String((r.triples || []).length)])));
+      if (st.raw) {
+        // RAW front: one BLANK-NODE frame per row (identity-deferred -- no witnessed frame key).
+        body.appendChild(note('Graph Materialization (the T and L of ETL) ' + EMDASH + ' the Adjudication Manifest '
+          + 'projected to a faithful RDF graph under M. The raw front declares no witnessed frame key, so each row is '
+          + 'one BLANK-NODE frame (identity-deferred); reference fillers become witnessed-identity entities (coreferent), '
+          + 'measured values become RDF literals, absent constitutive roles become ImplicitEntityRecords (about the '
+          + 'missing type, never a fabricated instance), and a law-violated mapping is an ExcludedFrame (never forced). '
+          + st.frameCount + ' frame(s), ' + nT + ' triples, status ' + st.datasetStatus + '.'));
+      } else {
+        const perRow = st.perRow || [];
+        body.appendChild(note('Graph Materialization (the T and L of ETL) ' + EMDASH + ' the Adjudication Manifest '
+          + 'projected to a faithful RDF graph under M. Every role lands in exactly one of four honest outcomes: '
+          + 'resolved becomes a witnessed-identity node (coreferent because the key is real); constitutive-absent '
+          + 'becomes an ImplicitEntityRecord (ABOUT the missing type, never an instance of it); accidental-broken '
+          + 'becomes an UnresolvedRole (the broken reference is IN the graph, not silently dropped); frame-excluded '
+          + 'never materializes as a valid frame (its reason names every constitutive dangler). ' + nT + ' triples.'));
+        body.appendChild(table(['Frame', 'Outcome', 'Triples'],
+          perRow.map((r) => ['ord-' + ((r.row && r.row.order_id) ?? '?'), String(r.outcome).toUpperCase(), String((r.triples || []).length)])));
+      }
       const pre = document.createElement('pre'); pre.className = 'turtle'; pre.textContent = st.turtle || '';
       body.appendChild(pre);
       const gbtn = document.createElement('button'); gbtn.className = 'btn'; gbtn.textContent = 'Download graph (Turtle)';

@@ -14,11 +14,21 @@
 // independently-verified modules (suite 46/0; the emitted graph read as the artifact; the synthetic divergence probe).
 
 import { materialize } from './vendor/gm/src/materialize.mjs';
+import { materializeRawFront } from './vendor/gm/src/materializeRaw.mjs';
 import { toTurtle, PREFIXES } from './vendor/gm/src/serialize.mjs';
 import { STAR_NORTHWIND } from './ssm.js';
 import LAW from './vendor/law/actofordering_law.mjs';
 
 export { PREFIXES };
+
+// RAW-front projection: the dataset-level FSDD + the instance rows + the bound recordConcept -> one blank-node frame
+// per row (identity-deferred -- the raw front declares no witnessed frame key). reference fillers -> witnessed
+// entities; literal fillers -> RDF literals; absent constitutive roles -> ICEs; a violated mapping -> an ExcludedFrame.
+export function materializeRawForFront(dictionary, rows, recordConcept) {
+  const { triples } = materializeRawFront(dictionary, rows, recordConcept);
+  const frameCount = triples.filter((t) => t.p === 'rdf:type' && t.o === recordConcept).length;
+  return { triples, turtle: toTurtle(triples), frameCount, datasetStatus: dictionary && dictionary['fsdd:datasetStatus'] };
+}
 
 // Derive M's SSMMapping shape (role -> column -> concept, + constitutive from the law's RCR) from the SAME SSM front
 // star. M's live dispatch reads the IntegrateResult per outcome; the constitutive flag is for completeness checking.

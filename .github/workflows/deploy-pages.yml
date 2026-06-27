@@ -50,6 +50,12 @@ jobs:
         run: |
           node docs/js/vendor/gm/test/gm.emit.mjs > gm-graph.ttl
           python -c "import rdflib, sys; g = rdflib.Graph(); g.parse('gm-graph.ttl', format='turtle'); print('rdflib parsed', len(g), 'triples'); sys.exit(0 if len(g) > 0 else 1)"
+      - name: GM raw-front output-fidelity (the raw-front graph's claims read against the emitted triples)
+        run: node docs/js/vendor/gm/test/gm-raw.verify.mjs
+      - name: GM raw-front real-parse (the raw-front Turtle MUST parse in a real RDF parser)
+        run: |
+          node docs/js/vendor/gm/test/gm-raw.emit.mjs > gm-raw-graph.ttl
+          python -c "import rdflib, sys; g = rdflib.Graph(); g.parse('gm-raw-graph.ttl', format='turtle'); print('rdflib parsed', len(g), 'triples'); sys.exit(0 if len(g) > 0 else 1)"
       - name: Status-page audit (instance 2 -- the live status manifest's claims are witnessed)
         run: node docs/js/audit/status-audit.test.mjs
 

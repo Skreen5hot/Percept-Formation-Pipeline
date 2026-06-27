@@ -6,7 +6,7 @@ import { adjudicateProposal } from './oce.js';
 import { buildDictionary } from './fsdd.js';
 import { init as fandawsInit, bindRows } from './fandaws.js';
 import { resolveStar, wrapForFsddPanel, STAR_NORTHWIND } from './ssm.js';
-import { materializeStar } from './gm.js';
+import { materializeStar, materializeRawForFront } from './gm.js';
 
 export async function run(rawInput, callbacks = {}) {
   const { onStageStart, onStageDone } = callbacks;
@@ -101,6 +101,20 @@ export async function run(rawInput, callbacks = {}) {
   const fsddResult = buildDictionary(stages);
   stages.fsdd = { status: (fsddResult && fsddResult.ok) ? 'done' : 'stopped', result: fsddResult };
   onStageDone?.('fsdd', stages.fsdd);
+
+  // TRANSFORM/LOAD (raw front): project the Adjudication Manifest into a faithful RDF graph -- one blank-node frame
+  // per row. Runs only when a frame was bound (declined -> nothing to materialize) and not disputed (deferred).
+  onStageStart?.('gm');
+  const rawProps = (stages.binder.proposal && stages.binder.proposal['bind:proposals']) || [];
+  const rawRC = rawProps.length ? rawProps[0]['bind:proposedBinding'].recordConcept : null;
+  const rawStatus = fsddResult && fsddResult.ok && fsddResult.dictionary && fsddResult.dictionary['fsdd:datasetStatus'];
+  if (rawRC && fsddResult.ok && rawStatus !== 'disputed') {
+    const graph = materializeRawForFront(fsddResult.dictionary, displayRecords, rawRC);
+    stages.gm = { status: 'done', raw: true, triples: graph.triples, turtle: graph.turtle, frameCount: graph.frameCount, datasetStatus: graph.datasetStatus, recordConcept: rawRC };
+  } else {
+    stages.gm = { status: 'gate', gateReason: rawRC ? 'disputed -- multi-frame materialization deferred (increment 2)' : 'no frame bound -- nothing to materialize' };
+  }
+  onStageDone?.('gm', stages.gm);
 
   setGates();
 
