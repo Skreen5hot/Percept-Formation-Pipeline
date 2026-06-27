@@ -6,19 +6,29 @@ export const PREFIXES = {
   rdf: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
 };
 
-function writeTerm(term, lit) {
-  if (lit) return JSON.stringify(term);
+function termToTurtle(term) {
+  const colon = term.indexOf(':');
+  if (colon === -1) return term;
+  const prefix = term.slice(0, colon);
+  const local = term.slice(colon + 1);
+  if (!(prefix in PREFIXES)) return term;
+  const needsExpansion = /[^A-Za-z0-9_.]/.test(local) || local.endsWith('.');
+  if (needsExpansion) {
+    return '<' + PREFIXES[prefix] + local + '>';
+  }
   return term;
 }
 
 export function toTurtle(triples) {
   const lines = [];
-  for (const [prefix, iri] of Object.entries(PREFIXES)) {
-    lines.push(`@prefix ${prefix}: <${iri}> .`);
+  for (const [p, iri] of Object.entries(PREFIXES)) {
+    lines.push(`@prefix ${p}: <${iri}> .`);
   }
   for (const { s, p, o, lit } of triples) {
-    const pred = p === 'rdf:type' ? 'a' : p;
-    lines.push(`${s} ${pred} ${writeTerm(o, lit)} .`);
+    const subject = termToTurtle(s);
+    const predicate = p === 'rdf:type' ? 'a' : termToTurtle(p);
+    const object = lit ? JSON.stringify(o) : termToTurtle(o);
+    lines.push(`${subject} ${predicate} ${object} .`);
   }
   return lines.join('\n');
 }

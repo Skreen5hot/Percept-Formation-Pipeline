@@ -40,6 +40,16 @@ jobs:
         run: node docs/js/vendor/ssm/test/runstar.verify.mjs
       - name: GM output-fidelity (the materialized graph's claims read against the emitted triples)
         run: node docs/js/vendor/gm/test/gm.verify.mjs
+      - name: Set up Python (a REAL RDF parser for the published graph)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install rdflib
+        run: pip install rdflib
+      - name: GM real-parse (the published Turtle MUST parse in a real RDF parser, not just look like RDF)
+        run: |
+          node docs/js/vendor/gm/test/gm.emit.mjs > gm-graph.ttl
+          python -c "import rdflib, sys; g = rdflib.Graph(); g.parse('gm-graph.ttl', format='turtle'); print('rdflib parsed', len(g), 'triples'); sys.exit(0 if len(g) > 0 else 1)"
       - name: Status-page audit (instance 2 -- the live status manifest's claims are witnessed)
         run: node docs/js/audit/status-audit.test.mjs
 
