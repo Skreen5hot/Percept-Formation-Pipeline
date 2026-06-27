@@ -17,7 +17,7 @@ async function drive(factRows) {
 // CLEAN: 9 roles resolve -> SUCCEEDS -> manifest emitted.
 {
   const { done, order } = await drive(STAR_SAMPLES.clean.factRows);
-  ok(JSON.stringify(order) === JSON.stringify(['ssm', 'binder', 'oce', 'fsdd']), 'clean: stage order ssm->binder->oce->fsdd');
+  ok(JSON.stringify(order) === JSON.stringify(['ssm', 'binder', 'oce', 'fsdd', 'gm']), 'clean: stage order ssm->binder->oce->fsdd->gm (GM = the Transform/Load step)');
   ok(done.ssm.outcome === 'resolved' && done.ssm.roleResolutions.length === 9
     && done.ssm.roleResolutions.every((r) => r.note === 'resolved'), 'clean: 9 roles all resolved');
   ok(done.binder.status === 'done' && done.binder.proposal.roleBindings.length === 9, 'clean: convergence -> 9 role-bindings');

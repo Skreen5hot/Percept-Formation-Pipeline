@@ -1,0 +1,42 @@
+# Graph Materialization -- faithfulness-checks.sparql (spec v1.5 §8.3)
+# The PORTABLE, dataset-independent, user-runnable honesty check -- run against ANY materialized graph in ANY
+# triple store. Each query is labeled with the pin it verifies and its EXPECTED result. This is the user's
+# INDEPENDENT check; it does not require trusting the JS suite. Loading is never the proof (§8.1) -- these queries
+# read the actual triples. Covers the STRUCTURAL honesty negatives; the law-relative completeness checks (Pin 7,
+# the §3a.2 multi-dangler) live in the JS suite (they need the law/RCR, not the instance graph).
+
+PREFIX fan:   <https://fnsr.dev/fan#>
+PREFIX fsdd:  <https://fnsr.dev/fsdd#>
+PREFIX fdata: <https://fnsr.dev/data/>
+PREFIX rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+# --- Q1 (§3 / Pin 2): no ImplicitEntityRecord is typed as the entity it concerns -- EXPECT: false
+ASK { ?ice a fsdd:ImplicitEntityRecord ; a ?t . ?ice fsdd:concernsType ?t }
+
+# --- Q2 (§3a.1 / Pin 2): every ICE carries a structured fsdd:role -- EXPECT: false
+ASK { ?ice a fsdd:ImplicitEntityRecord . FILTER NOT EXISTS { ?ice fsdd:role ?r } }
+
+# --- Q3 (§3b / Pin 9): no UnresolvedRole is typed as the entity it concerns -- EXPECT: false
+ASK { ?u a fsdd:UnresolvedRole ; a ?t . ?u fsdd:concernsType ?t }
+
+# --- Q4 (§3b / Pin 9): every UnresolvedRole names its reason -- EXPECT: false
+ASK { ?u a fsdd:UnresolvedRole . FILTER NOT EXISTS { ?u fsdd:reason ?r } }
+
+# --- Q5 (Pin 3): nothing is both an excluded frame AND a valid ActOfOrdering -- EXPECT: false
+ASK { ?f a fsdd:ExcludedFrame ; a fan:ActOfOrdering }
+
+# --- Q6 (Pin 8): every materialized frame carries projection provenance -- EXPECT: false
+ASK { ?frame a fan:ActOfOrdering . FILTER NOT EXISTS { ?frame fsdd:projectedBy ?p } }
+
+# --- Q7 (Pin 1 coreference): two distinct ActOfOrdering frames sharing a customer reference the SAME node
+#     -- EXPECT: the shared customer appears ONCE (COUNT DISTINCT ?c === 1 over the two-C1 fixture)
+SELECT (COUNT(DISTINCT ?c) AS ?sharedCustomers) WHERE {
+  ?f1 a fan:ActOfOrdering ; fan:hasCustomer ?c .
+  ?f2 a fan:ActOfOrdering ; fan:hasCustomer ?c .
+  FILTER(?f1 != ?f2)
+}
+
+# --- Q8 (faithfulness spot-check): absences present AS records (the unwitnessed roles, listed) -- EXPECT: the rows
+SELECT ?ice ?role ?type WHERE {
+  ?ice a fsdd:ImplicitEntityRecord ; fsdd:role ?role ; fsdd:concernsType ?type .
+}

@@ -123,8 +123,16 @@ function runPipeline(ssm, factRow, dimsData, query, factTableKey, law, scope, le
       dictionary: null,
       ice: [],
       defect: {
-        taint: d.reason === 'broken-ref' ? 'L5' : 'L4',
-        diagnostic: { code: 'SSM-DANGLING-FK', fieldId: d.fieldId, reason: d.reason }
+        // sec 3a.2 (graph-materialization v1.5): taint = worst over ALL danglers; single-dangler unchanged.
+        taint: a.dangling.some(x => x.reason === 'broken-ref') ? 'L5' : 'L4',
+        // fieldId/reason kept (first dangler) for backward compat; danglers[] ADDITIVE -- every constitutive
+        // dangler so the materialized ExcludedFrame reason can name them all (assemble already collected them).
+        diagnostic: {
+          code: 'SSM-DANGLING-FK',
+          fieldId: d.fieldId,
+          reason: d.reason,
+          danglers: a.dangling.map(x => ({ fieldId: x.fieldId, reason: x.reason }))
+        }
       },
       roleDefects: [], // C1 invariant #3: excluded frame never carries local defects
       capMarkers: []
@@ -217,7 +225,11 @@ function resolvePointBitemporal(ssm, factRow, dimsData, query, factTableKey, law
   const constitutiveRAs = roleAssignments.filter(ra => constitutiveRoles.has(roleLocal(ra['ssm:role'])));
 
   let anyAbsent = false;
-  let danglingResult = null;
+  // sec 3a.2 (graph-materialization v1.5): collect EVERY constitutive dangler (was: break at the first). This is
+  // the path the demo (point-mode bitemporal) takes. Scan the WHOLE constitutive set -- do not break on absent
+  // either, or a dangler after an absent would be silently dropped. A constitutive dangling EXCLUDES the frame and
+  // DOMINATES absent.
+  const danglers = [];
   const resolvedFKs = [];
 
   for (const ra of constitutiveRAs) {
@@ -230,21 +242,11 @@ function resolvePointBitemporal(ssm, factRow, dimsData, query, factTableKey, law
 
     if (resolution.state === 'absent') {
       anyAbsent = true;
-      break;
+      continue;
     }
     if (resolution.state === 'dangling') {
-      danglingResult = {
-        outcome: 'dangling',
-        dictionary: null,
-        ice: [],
-        defect: {
-          taint: resolution.reason === 'temporal-nonoverlap' ? 'L4' : 'L5',
-          diagnostic: { code: 'SSM-DANGLING-FK', fieldId: fkColumn, reason: resolution.reason }
-        },
-        roleDefects: [],
-        capMarkers: []
-      };
-      break;
+      danglers.push({ fieldId: fkColumn, reason: resolution.reason });
+      continue;
     }
 
     const winner = candidates.find(c => c.id === resolution.sourceEventId);
@@ -264,7 +266,19 @@ function resolvePointBitemporal(ssm, factRow, dimsData, query, factTableKey, law
     resolvedFKs.push({ fkColumn, refTable, winner, supersedes });
   }
 
-  if (danglingResult) return danglingResult;
+  if (danglers.length > 0) {
+    return {
+      outcome: 'dangling',
+      dictionary: null,
+      ice: [],
+      defect: {
+        taint: danglers.some(d => d.reason === 'broken-ref') ? 'L5' : 'L4',
+        diagnostic: { code: 'SSM-DANGLING-FK', fieldId: danglers[0].fieldId, reason: danglers[0].reason, danglers }
+      },
+      roleDefects: [],
+      capMarkers: []
+    };
+  }
 
   if (anyAbsent || resolvedFKs.length === 0) {
     return runPipeline(ssm, factRow, dimsData, query, factTableKey, law, scope, lexis, schema, cism, envelope);

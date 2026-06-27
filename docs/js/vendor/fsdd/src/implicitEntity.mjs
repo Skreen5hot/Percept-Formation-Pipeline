@@ -28,6 +28,11 @@ export function implicitEntities(emptyNecessities, recordConcept, lawHash, lawRe
     const record = {
       '@type': ['fsdd:ImplicitEntityRecord', 'iao:InformationContentEntity'],
       'fsdd:concernsType': { '@id': requiredType },
+      // §3a.1 (graph-materialization v1.5): name the absent role STRUCTURALLY, not only in fsdd:derivedFrom
+      // prose. Disambiguates role-played fillers (3 fan:Date roles share concernsType). Bare-string form to
+      // match fsdd:role on resolved DataFields. Extends this constructor's structured-not-prose discipline
+      // (cf. fsdd:inheresQuality/requiredBearer below).
+      'fsdd:role': relation,
       'fsdd:derivedFrom': derivedFrom,
       'fsdd:status': 'empty',
       'fsdd:perceptGrounded': true,

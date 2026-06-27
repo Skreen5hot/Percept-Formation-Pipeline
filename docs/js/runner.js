@@ -6,6 +6,7 @@ import { adjudicateProposal } from './oce.js';
 import { buildDictionary } from './fsdd.js';
 import { init as fandawsInit, bindRows } from './fandaws.js';
 import { resolveStar, wrapForFsddPanel, STAR_NORTHWIND } from './ssm.js';
+import { materializeStar } from './gm.js';
 
 export async function run(rawInput, callbacks = {}) {
   const { onStageStart, onStageDone } = callbacks;
@@ -179,6 +180,13 @@ export async function runStar(factRows, callbacks = {}) {
   onStageStart?.('fsdd');
   stages.fsdd = { status: (row && row.dictionary) ? 'done' : 'stopped', result: wrapForFsddPanel(row) };
   onStageDone?.('fsdd', stages.fsdd);
+
+  // TRANSFORM/LOAD: project the IntegrateResult into a faithful RDF graph (the GM front, downstream of FSDD).
+  // M reads result.outcome and projects per the four-outcome partition; it never re-derives the SSM decision.
+  onStageStart?.('gm');
+  const graph = materializeStar(resolved, factRows);
+  stages.gm = { status: 'done', triples: graph.triples, turtle: graph.turtle, perRow: graph.perRow };
+  onStageDone?.('gm', stages.gm);
 
   return { stages, inputMode, resolved };
 }

@@ -168,8 +168,10 @@ td{padding:.2rem .5rem;border-bottom:1px solid #21262d;color:#8b949e}
 <div class="dag-node" id="dag-oce">OCE<span class="nb built">Built</span></div>
 <div class="dag-arr">&rarr;</div>
 <div class="dag-node" id="dag-fsdd">FSDD<span class="nb built">Built</span></div>
+<div class="dag-arr">&rarr;</div>
+<div class="dag-node" id="dag-gm">GM<span class="nb built">Built</span></div>
 </div>
-<p class="dag-scope">Fandaws consulted; ALS and downstream out of scope.</p>
+<p class="dag-scope">Fandaws consulted; GM (graph materialization) is the structured-front T/L step; ALS and downstream out of scope.</p>
 </div>
 </div>
 <div class="dag-consulted">
@@ -227,6 +229,12 @@ td{padding:.2rem .5rem;border-bottom:1px solid #21262d;color:#8b949e}
 <details id="panel-fsdd" open>
 <summary>FSDD &mdash; Semantic Data Dictionary (Adjudication Manifest)<span class="badge idle" id="badge-fsdd">idle</span></summary>
 <div class="panel-body" id="body-fsdd"><p class="gate">The pipeline's deliverable: a layered, standards-aligned, content-addressed dictionary of the dataset's adjudicated meaning &mdash; emitted on Run, downloadable as canonical JSON-LD (and a standards-pure DCAT+CSVW+SKOS+QUDT+PROV view). It states what the data means, on what authority, and what the law requires that the data does not show.</p></div>
+</details>
+
+<h2>Transform / Load (the graph)</h2>
+<details id="panel-gm" open>
+<summary>GM &mdash; Graph Materialization (FSDD &rarr; faithful RDF)<span class="badge idle" id="badge-gm">idle</span></summary>
+<div class="panel-body" id="body-gm"><p class="gate">The T and L of ETL for the semantic layer (structured front): the Adjudication Manifest projected to a faithful RDF graph under the projection M. Every role lands in exactly one of four honest outcomes &mdash; resolved becomes a witnessed-identity node, constitutive-absent an ImplicitEntityRecord (never a fabricated instance), accidental-broken an UnresolvedRole (the broken reference kept in the graph), frame-excluded never a valid frame (its reason naming every dangler) &mdash; with a ProjectionRecord tying the graph to the source. Emitted on a structured-source Run; downloadable as Turtle.</p></div>
 </details>
 </section>
 

@@ -3,7 +3,7 @@ import { SAMPLE_CSV, MISLABELED_CSV, DIRTY_CSV, CLINICAL_CSV, DISPUTED_CSV } fro
 import { STAR_SAMPLES } from './ssm.js';
 
 const $ = (id) => document.getElementById(id);
-const BUILT = ['snp', 'bibss', 'sas', 'ssm', 'binder', 'oce', 'fandaws', 'fsdd'];
+const BUILT = ['snp', 'bibss', 'sas', 'ssm', 'binder', 'oce', 'fandaws', 'fsdd', 'gm'];
 const ALL = ['snp', 'bibss', 'sas', 'ssm', 'binder', 'oce', 'dknp', 'fandaws'];
 const TYPES = ['null', 'boolean', 'integer', 'number', 'string'];
 const EMDASH = String.fromCharCode(0x2014);  // em-dash, ASCII-safe source -> no mojibake
@@ -342,6 +342,31 @@ const callbacks = {
       body.appendChild(row);
       const diags = (r.diagnostics || []).map((x) => x.code);
       if (diags.length) body.appendChild(note('diagnostics: ' + diags.join(', '), 'edge-note'));
+    } else if (id === 'gm') {
+      // TRANSFORM/LOAD: the Adjudication Manifest projected to a faithful RDF graph under M. The panel shows the
+      // EMITTED graph (turtle) as the artifact -- not merely that a graph was produced.
+      dagClass('gm', 'done'); setBadge('gm', 'Materialized', 'done-b');
+      body.innerHTML = '';
+      const perRow = st.perRow || [];
+      const nT = (st.triples || []).length;
+      body.appendChild(note('Graph Materialization (the T and L of ETL) ' + EMDASH + ' the Adjudication Manifest '
+        + 'projected to a faithful RDF graph under M. Every role lands in exactly one of four honest outcomes: '
+        + 'resolved becomes a witnessed-identity node (coreferent because the key is real); constitutive-absent '
+        + 'becomes an ImplicitEntityRecord (ABOUT the missing type, never an instance of it); accidental-broken '
+        + 'becomes an UnresolvedRole (the broken reference is IN the graph, not silently dropped); frame-excluded '
+        + 'never materializes as a valid frame (its reason names every constitutive dangler). ' + nT + ' triples.'));
+      body.appendChild(table(['Frame', 'Outcome', 'Triples'],
+        perRow.map((r) => ['ord-' + ((r.row && r.row.order_id) ?? '?'), String(r.outcome).toUpperCase(), String((r.triples || []).length)])));
+      const pre = document.createElement('pre'); pre.className = 'turtle'; pre.textContent = st.turtle || '';
+      body.appendChild(pre);
+      const gbtn = document.createElement('button'); gbtn.className = 'btn'; gbtn.textContent = 'Download graph (Turtle)';
+      gbtn.style.marginTop = '.5rem';
+      gbtn.addEventListener('click', () => {
+        const url = URL.createObjectURL(new Blob([st.turtle || ''], { type: 'text/turtle' }));
+        const a = document.createElement('a'); a.href = url; a.download = 'materialized-graph.ttl'; a.click();
+        URL.revokeObjectURL(url);
+      });
+      body.appendChild(gbtn);
     }
     // gate stages keep their static, verbatim "not built / not reached" copy (honest gating -- never overwritten)
   },
