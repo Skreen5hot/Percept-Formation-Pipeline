@@ -15,6 +15,8 @@
 
 import { materialize } from './vendor/gm/src/materialize.mjs';
 import { materializeRawFront } from './vendor/gm/src/materializeRaw.mjs';
+import { materializeHops } from './vendor/gm/src/materializeSnowflake.mjs';
+import { traverse } from './vendor/ssm/src/snowflakeTraversal.mjs';
 import { toTurtle, PREFIXES } from './vendor/gm/src/serialize.mjs';
 import { STAR_NORTHWIND } from './ssm.js';
 import LAW from './vendor/law/actofordering_law.mjs';
@@ -71,4 +73,59 @@ export function materializeStar(resolved, factRows) {
   });
   const triples = perRow.flatMap((r) => r.triples);
   return { triples, turtle: toTurtle(triples), perRow };
+}
+
+// SNOWFLAKE descent (the structured front's resolution made graph-capable): after the star resolves a fact's
+// roles, follow any RESOLVED relatum whose dimension declares its OWN FKs (ssm:outgoingFKs) one declared level
+// further. The hop reuses the SAME witnessed-identity mint as the star (entityIRI, in materializeHops), so the
+// ship-to customer corefers with the orderer BY CONSTRUCTION. The star triples are UNCHANGED; the hop triples
+// are APPENDED, then EXACT-duplicate triples are collapsed (the snowflaked relatum's type triple is asserted by
+// BOTH the star role-binding and the snowflake subject -- the SAME triple). Dedupe removes ONLY exact duplicates,
+// so every distinct edge (incl. the snowflake hasCustomer edge) survives -- NO silent loss (the dedupe-retains-
+// all-edges guarantee). The subject's concept is read from the ADJUDICATED groundedConcept (the SAME source the
+// star uses, gm materialize.mjs:68), never the declared entityClass -- so the snowflake subject node is byte-
+// identical to the star's even if the adjudication sub-typed it (the GM-arc correct-by-coincidence discipline).
+function tripleKey(t) { return t.s + '' + t.p + '' + t.o + '' + (t.lit ? '1' : '0'); }
+function dedupeTriples(triples) {
+  const seen = new Set();
+  const out = [];
+  for (const t of triples) { const k = tripleKey(t); if (!seen.has(k)) { seen.add(k); out.push(t); } }
+  return out;
+}
+
+export function materializeStarSnowflake(resolved, factRows, ssmFront = STAR_NORTHWIND) {
+  const star = materializeStar(resolved, factRows);
+  const ssm = ssmFront.ssm;
+  const dims = ssm['ssm:dimensions'] || {};
+  const dimsData = ssmFront.dimsData || {};
+  const query = ssmFront.query || {};
+  const factTable = Object.keys(ssm['ssm:facts'])[0];
+  const RA = (ssm['ssm:facts'][factTable]['ssm:roleAssignments']) || [];
+  const results = (resolved && resolved.results) || [];
+
+  const hopTriples = [];
+  results.forEach((result, i) => {
+    const factRow = factRows[i] || {};
+    // an excluded frame materialized NO entity to descend from
+    if (!result || result.outcome === 'dangling' || result.outcome === 'fails' || !result.dictionary) return;
+    for (const ra of RA) {
+      const refTable = ra['ssm:refTable'];
+      const dimDef = dims[refTable] || {};
+      if (!Array.isArray(dimDef['ssm:outgoingFKs']) || dimDef['ssm:outgoingFKs'].length === 0) continue; // not snowflaked
+      const fkValue = factRow[ra['ssm:fkColumn']];
+      if (fkValue === null || fkValue === undefined) continue;                    // role absent -> no entity to descend
+      const subRec = (dimsData[refTable] || []).find((c) => c.businessKey === fkValue);
+      if (!subRec) continue;                                                      // role dangled -> star emitted UnresolvedRole; no entity
+      // subject concept from the ADJUDICATED groundedConcept (matches the star's mint; never the declared entityClass)
+      const field = (result.dictionary['fsdd:hasField'] || []).find((f) => f['fsdd:column'] === ra['ssm:fkColumn']);
+      const subjectConcept = field && field['fsdd:groundedConcept'] && field['fsdd:groundedConcept']['@id'];
+      if (!subjectConcept) continue;                                              // star (run above) would have thrown on a malformed dict
+      const hops = traverse({ subjectRefTable: refTable, subjectRow: subRec.content || {}, mapping: ssm, dimsData, query });
+      const out = materializeHops({ subjectConcept, subjectKey: fkValue, hops });
+      for (const t of out.triples) hopTriples.push(t);
+    }
+  });
+
+  const triples = dedupeTriples([...star.triples, ...hopTriples]);
+  return { triples, turtle: toTurtle(triples), perRow: star.perRow, starTriples: star.triples, hopTriples };
 }

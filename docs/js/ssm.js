@@ -17,9 +17,15 @@ import { stripToStandards } from './vendor/fsdd/src/standardsPure.mjs';
 // orderOccupies CONSTITUTIVE vs required/shippedOccupies ACCIDENTAL) adjudicated against the REAL compiled
 // fan:ActOfOrdering law (the signed Phase-2 partition). Surrogate keys; business keys carried as attributes.
 const D = (bk) => ({ id: bk, businessKey: bk, content: {}, validFrom: '2024-01-01', validTo: null, assertedAt: '2024-01-01' });
+// A ship_info record carries its OWN declared FK value (customer_key) in content -- the snowflake hop reads it.
+const SI = (bk, customer_key) => ({ id: bk, businessKey: bk, content: { customer_key }, validFrom: '2024-01-01', validTo: null, assertedAt: '2024-01-01' });
 const DIMS = {
-  customer_dim: [D('C1')], product_dim: [D('P1')], employee_dim: [D('E1')], supplier_dim: [D('SUP1')],
-  shipper_dim: [D('SH1')], ship_info: [D('SI1')], date_dim: [D('D-ORD'), D('D-REQ'), D('D-SHP')],
+  customer_dim: [D('C1'), D('C2')], product_dim: [D('P1')], employee_dim: [D('E1')], supplier_dim: [D('SUP1')],
+  shipper_dim: [D('SH1')],
+  // ship_info -> customer_dim is the declared SNOWFLAKE hop (ship_info.customer_key, nullable). SI1 ship-to = the
+  // orderer C1 (coreference); SI9 ship-to C2 (divergent); SI2 NULL (absent -> nothing); SI3 9999 (dangling).
+  ship_info: [SI('SI1', 'C1'), SI('SI9', 'C2'), SI('SI2', null), SI('SI3', '9999')],
+  date_dim: [D('D-ORD'), D('D-REQ'), D('D-SHP')],
 };
 const RA = [
   { 'ssm:fkColumn': 'customer_key', 'ssm:refTable': 'customer_dim', 'ssm:role': 'hasCustomer' },
@@ -38,7 +44,14 @@ const DIMDEFS = {
   employee_dim: { 'ssm:entityClass': 'fan:Employee', 'ssm:businessKey': 'employee_key' },
   supplier_dim: { 'ssm:entityClass': 'fan:Supplier', 'ssm:businessKey': 'supplier_key' },
   shipper_dim: { 'ssm:entityClass': 'fan:Shipper', 'ssm:businessKey': 'shipper_key' },
-  ship_info: { 'ssm:entityClass': 'fan:ShipInfo', 'ssm:businessKey': 'ship_info_key' },
+  ship_info: {
+    'ssm:entityClass': 'fan:ShipInfo', 'ssm:businessKey': 'ship_info_key',
+    // SNOWFLAKE (S3): the dimension's OWN declared FK -- same field names as ssm:roleAssignments + the
+    // genuinely-new ssm:nullable; the relatum concept is DERIVED from refTable -> ssm:entityClass (never inline).
+    'ssm:outgoingFKs': [
+      { 'ssm:fkColumn': 'customer_key', 'ssm:refTable': 'customer_dim', 'ssm:role': 'hasCustomer', 'ssm:nullable': true },
+    ],
+  },
   date_dim: { 'ssm:entityClass': 'fan:Date', 'ssm:businessKey': 'date_key' },
 };
 const SSM_MAPPING = {
@@ -60,11 +73,22 @@ const ORDER_CLEAN = { order_id: 1, customer_key: 'C1', product_key: 'P1', order_
 const ORDER_NO_ORDERDATE = { ...ORDER_CLEAN, order_id: 2, order_date_key: null };       // CONSTITUTIVE NULL -> ICE
 const ORDER_ORPHAN_CUST = { ...ORDER_CLEAN, order_id: 3, customer_key: 'C-ORPHAN' };     // CONSTITUTIVE dangling -> exclusion
 
+// SNOWFLAKE: four clean orders (frame resolves) that differ ONLY in their ship_info hop outcome (the declared
+// hop ship_info -> customer_dim). One sample exercises all four per-subject outcomes in the materialized graph;
+// all four share orderer C1, so the graph coreferes the ship-to of SI1 with the orderer (one fdata:Customer/C1).
+const ORDER_SF = (order_id, ship_info_key) => ({ ...ORDER_CLEAN, order_id, ship_info_key });
+
 // The named star samples (each a {label, factRows} the UI can offer as a button), mirroring the raw samples.
 export const STAR_SAMPLES = {
   clean: { label: 'Northwind order (resolves)', factRows: [ORDER_CLEAN] },
   ice: { label: 'Northwind order, missing order_date (ICE)', factRows: [ORDER_NO_ORDERDATE] },
   orphan: { label: 'Northwind order, orphan customer (excluded)', factRows: [ORDER_ORPHAN_CUST] },
+  snowflake: { label: 'Northwind orders, snowflake ship_info -> customer hop', factRows: [
+    ORDER_SF(10, 'SI1'),   // hop resolved, COREFERENT (ship-to = orderer C1)
+    ORDER_SF(11, 'SI9'),   // hop resolved, DIVERGENT (ship-to C2)
+    ORDER_SF(12, 'SI2'),   // hop ABSENT (customer_key NULL) -> nothing
+    ORDER_SF(13, 'SI3'),   // hop DANGLING (customer_key 9999) -> UnresolvedRole
+  ] },
 };
 
 // The fixed Northwind star bundle (everything but the fact rows, which the chosen sample supplies).

@@ -56,6 +56,14 @@ jobs:
         run: |
           node docs/js/vendor/gm/test/gm-raw.emit.mjs > gm-raw-graph.ttl
           python -c "import rdflib, sys; g = rdflib.Graph(); g.parse('gm-raw-graph.ttl', format='turtle'); print('rdflib parsed', len(g), 'triples'); sys.exit(0 if len(g) > 0 else 1)"
+      - name: Snowflake front output-fidelity (the ship_info -> customer hop's four outcomes in the live emitted graph)
+        run: node docs/js/vendor/gm/test/snowflake.verify.mjs
+      - name: Snowflake unit pins (the traversal + materializer primitives, in isolation)
+        run: node docs/js/snowflake_test/run.mjs
+      - name: Snowflake real-parse (the live hop graph MUST parse in rdflib AND carry the four outcomes in the bytes)
+        run: |
+          node docs/js/vendor/gm/test/snowflake.emit.mjs > snowflake-graph.ttl
+          python docs/js/vendor/gm/test/snowflake_parse.py snowflake-graph.ttl
       - name: Status-page audit (instance 2 -- the live status manifest's claims are witnessed)
         run: node docs/js/audit/status-audit.test.mjs
 

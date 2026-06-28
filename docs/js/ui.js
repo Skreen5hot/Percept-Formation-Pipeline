@@ -424,5 +424,6 @@ $('btn-run').addEventListener('click', () => execute($('adhoc-text').value || ''
 $('btn-star-clean').addEventListener('click', () => executeStar(STAR_SAMPLES.clean.factRows));
 $('btn-star-ice').addEventListener('click', () => executeStar(STAR_SAMPLES.ice.factRows));
 $('btn-star-orphan').addEventListener('click', () => executeStar(STAR_SAMPLES.orphan.factRows));
+$('btn-star-snowflake').addEventListener('click', () => executeStar(STAR_SAMPLES.snowflake.factRows));
 $('tab-sample').addEventListener('click', () => switchTab('sample'));
 $('tab-adhoc').addEventListener('click', () => switchTab('adhoc'));

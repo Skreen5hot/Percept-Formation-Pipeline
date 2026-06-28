@@ -6,7 +6,7 @@ import { adjudicateProposal } from './oce.js';
 import { buildDictionary } from './fsdd.js';
 import { init as fandawsInit, bindRows } from './fandaws.js';
 import { resolveStar, wrapForFsddPanel, STAR_NORTHWIND } from './ssm.js';
-import { materializeStar, materializeRawForFront } from './gm.js';
+import { materializeStar, materializeStarSnowflake, materializeRawForFront } from './gm.js';
 
 export async function run(rawInput, callbacks = {}) {
   const { onStageStart, onStageDone } = callbacks;
@@ -197,9 +197,12 @@ export async function runStar(factRows, callbacks = {}) {
 
   // TRANSFORM/LOAD: project the IntegrateResult into a faithful RDF graph (the GM front, downstream of FSDD).
   // M reads result.outcome and projects per the four-outcome partition; it never re-derives the SSM decision.
+  // SNOWFLAKE: after the star roles materialize, descend any resolved relatum whose dimension declares its own
+  // FKs (ship_info -> customer_dim) one declared level further. The star triples are unchanged (S4 byte-stable);
+  // the hop edges are appended + exact-duplicate-deduped (the structured front's resolution made graph-capable).
   onStageStart?.('gm');
-  const graph = materializeStar(resolved, factRows);
-  stages.gm = { status: 'done', triples: graph.triples, turtle: graph.turtle, perRow: graph.perRow };
+  const graph = materializeStarSnowflake(resolved, factRows);
+  stages.gm = { status: 'done', triples: graph.triples, turtle: graph.turtle, perRow: graph.perRow, hopTriples: graph.hopTriples };
   onStageDone?.('gm', stages.gm);
 
   return { stages, inputMode, resolved };
