@@ -93,8 +93,12 @@ function dedupeTriples(triples) {
   return out;
 }
 
-export function materializeStarSnowflake(resolved, factRows, ssmFront = STAR_NORTHWIND) {
-  const star = materializeStar(resolved, factRows);
+// Find the snowflake descents for a resolved star run: for each non-excluded frame, each RESOLVED relatum whose
+// dimension declares its OWN FKs (ssm:outgoingFKs) is a snowflaked subject -> traverse one declared level. Returns
+// per-descent { orderId, refTable, subjectRole, subjectConcept (the ADJUDICATED groundedConcept), subjectKey,
+// subRow, frameKeyToSameDim, hops }. Shared by the materializer (triples) and the resolution panel (display) so
+// the descent logic lives in ONE place.
+function snowflakeDescents(resolved, factRows, ssmFront) {
   const ssm = ssmFront.ssm;
   const dims = ssm['ssm:dimensions'] || {};
   const dimsData = ssmFront.dimsData || {};
@@ -102,12 +106,10 @@ export function materializeStarSnowflake(resolved, factRows, ssmFront = STAR_NOR
   const factTable = Object.keys(ssm['ssm:facts'])[0];
   const RA = (ssm['ssm:facts'][factTable]['ssm:roleAssignments']) || [];
   const results = (resolved && resolved.results) || [];
-
-  const hopTriples = [];
+  const descents = [];
   results.forEach((result, i) => {
     const factRow = factRows[i] || {};
-    // an excluded frame materialized NO entity to descend from
-    if (!result || result.outcome === 'dangling' || result.outcome === 'fails' || !result.dictionary) return;
+    if (!result || result.outcome === 'dangling' || result.outcome === 'fails' || !result.dictionary) return; // excluded -> no descent
     for (const ra of RA) {
       const refTable = ra['ssm:refTable'];
       const dimDef = dims[refTable] || {};
@@ -120,12 +122,41 @@ export function materializeStarSnowflake(resolved, factRows, ssmFront = STAR_NOR
       const field = (result.dictionary['fsdd:hasField'] || []).find((f) => f['fsdd:column'] === ra['ssm:fkColumn']);
       const subjectConcept = field && field['fsdd:groundedConcept'] && field['fsdd:groundedConcept']['@id'];
       if (!subjectConcept) continue;                                              // star (run above) would have thrown on a malformed dict
-      const hops = traverse({ subjectRefTable: refTable, subjectRow: subRec.content || {}, mapping: ssm, dimsData, query });
-      const out = materializeHops({ subjectConcept, subjectKey: fkValue, hops });
-      for (const t of out.triples) hopTriples.push(t);
+      const subRow = subRec.content || {};
+      const hops = traverse({ subjectRefTable: refTable, subjectRow: subRow, mapping: ssm, dimsData, query });
+      descents.push({ orderId: factRow.order_id, refTable, subjectRole: ra['ssm:role'], subjectConcept, subjectKey: fkValue, subRow, factRow, RA, hops });
     }
   });
+  return descents;
+}
 
+export function materializeStarSnowflake(resolved, factRows, ssmFront = STAR_NORTHWIND) {
+  const star = materializeStar(resolved, factRows);
+  const hopTriples = [];
+  for (const d of snowflakeDescents(resolved, factRows, ssmFront)) {
+    const out = materializeHops({ subjectConcept: d.subjectConcept, subjectKey: d.subjectKey, hops: d.hops });
+    for (const t of out.triples) hopTriples.push(t);
+  }
   const triples = dedupeTriples([...star.triples, ...hopTriples]);
   return { triples, turtle: toTurtle(triples), perRow: star.perRow, starTriples: star.triples, hopTriples };
+}
+
+// Per-order hop RESOLUTIONS for the resolution (SSM/percept) panel -- the descent IS a resolution operation, so the
+// resolution panel is where it belongs (not only the final graph). Flat rows, one per declared hop per order; a hop
+// resolved to a key the SAME frame already binds to that dimension is flagged COREFERENT (the ship-to is the orderer).
+export function starHopResolutions(resolved, factRows, ssmFront = STAR_NORTHWIND) {
+  const rows = [];
+  for (const d of snowflakeDescents(resolved, factRows, ssmFront)) {
+    for (const h of d.hops) {
+      const frameRoleSameDim = d.RA.find((ra) => ra['ssm:refTable'] === h.refTable);
+      const frameKey = frameRoleSameDim ? d.factRow[frameRoleSameDim['ssm:fkColumn']] : undefined;
+      rows.push({
+        orderId: d.orderId, subject: d.subjectConcept + '/' + d.subjectKey, deepFk: h.fkColumn, refTable: h.refTable,
+        role: h.role, value: d.subRow[h.fkColumn] ?? null, outcome: h.outcome, resolvedKey: h.resolvedKey,
+        reason: h.reason, concept: h.concept,
+        coreferent: h.outcome === 'resolved' && frameKey != null && h.resolvedKey === frameKey,
+      });
+    }
+  }
+  return rows;
 }

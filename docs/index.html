@@ -148,16 +148,16 @@ td{padding:.2rem .5rem;border-bottom:1px solid #21262d;color:#8b949e}
 </div>
 </div>
 <div class="dag-front" id="front-star">
-<div class="dag-front-label">front: structured source (star schema)</div>
+<div class="dag-front-label">front: structured source (star + snowflake)</div>
 <div class="dag-row">
 <div class="dag-node" id="dag-ssm">SSM<span class="nb built">Built</span></div>
-<span class="fl">FK-resolve &middot; role-bind &mdash;&rarr; Binder</span>
+<span class="fl">FK-resolve (single-hop star, multi-hop snowflake) &middot; role-bind &mdash;&rarr; Binder</span>
 </div>
-<div class="dag-front-note">structured-source perception (Phase 2) &mdash; forms the percept from an already-structured source</div>
+<div class="dag-front-note">structured-source perception (Phase 2) &mdash; forms the percept from an already-structured source. <b>snowflake (Built)</b>: resolution follows a dimension's own declared FK one declared level further (ship_info &rarr; customer_dim) &mdash; the same front, deepened (no new door).</div>
 </div>
 <div class="dag-front dag-front-future">
 <div class="dag-front-label">more fronts</div>
-<div class="dag-front-note">snowflake, graph &mdash; planned; each plugs into the same convergence</div>
+<div class="dag-front-note">graph &mdash; planned; plugs into the same convergence</div>
 </div>
 </div>
 <div class="dag-converge">&darr;&nbsp; convergence: any front's formed percept becomes a flat frame proposal &nbsp;&darr;</div>

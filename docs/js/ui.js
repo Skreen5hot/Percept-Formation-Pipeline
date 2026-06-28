@@ -157,6 +157,25 @@ const callbacks = {
         + 'front uses (different door, same core).'));
       body.appendChild(table(['FK column', 'Role', '-> Dimension', 'Relatum concept', 'Value', 'Resolution'],
         (st.roleResolutions || []).map((r) => [r.fkColumn, r.role, r.refTable, r.relatumConcept, String(r.fkValue ?? 'null'), r.note])));
+      // SNOWFLAKE HOP -- the descent shown in the RESOLUTION panel (it IS a resolution operation, not only a graph
+      // shape). The four per-subject outcomes are legible here, not only in the final Turtle.
+      const hops = st.hopResolutions || [];
+      if (hops.length) {
+        const n = st.sampleSize || 1;
+        if (n > 1) body.appendChild(note('This sample is ' + n + ' structurally-identical star orders (all 9 roles '
+          + 'resolve); the star resolution + shared-core adjudication is shown for the first (representative). They '
+          + 'differ ONLY in the snowflake hop below, shown for all ' + n + ' -- which the graph then materializes.', 'edge-note'));
+        body.appendChild(note('Snowflake hop ' + EMDASH + ' resolution follows the dimension\'s OWN declared FK one '
+          + 'declared level further (ship_info.customer_key -> customer_dim). The intermediary\'s own FK resolves by '
+          + 'the SAME primitive, one level deeper -- the four per-subject outcomes:'));
+        body.appendChild(table(['Order', 'Subject', 'Deep FK', '-> Dim', 'Value', 'Hop resolution'],
+          hops.map((h) => ['ord-' + h.orderId, h.subject, h.deepFk, h.refTable, String(h.value ?? 'null'),
+            h.outcome === 'resolved'
+              ? ('resolved -> ' + h.concept + '/' + h.resolvedKey + (h.coreferent ? ' (coreferent with the orderer)' : ' (distinct)'))
+              : h.outcome === 'absent'
+                ? 'absent (NULL) -> nothing (optional relation unfilled)'
+                : 'dangling (' + h.reason + ') -> UnresolvedRole (never a fabricated customer)'])));
+      }
       if ((st.roleDefects || []).length) body.appendChild(note('roleDefects: '
         + st.roleDefects.map((d) => String(d.role) + ' (' + ((d.diagnostic && d.diagnostic.reason) || '') + ')').join(', '), 'edge-note'));
       if ((st.capMarkers || []).length) body.appendChild(note('capMarkers: '

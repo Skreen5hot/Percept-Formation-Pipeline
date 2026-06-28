@@ -6,7 +6,7 @@ import { adjudicateProposal } from './oce.js';
 import { buildDictionary } from './fsdd.js';
 import { init as fandawsInit, bindRows } from './fandaws.js';
 import { resolveStar, wrapForFsddPanel, STAR_NORTHWIND } from './ssm.js';
-import { materializeStar, materializeStarSnowflake, materializeRawForFront } from './gm.js';
+import { materializeStar, materializeStarSnowflake, starHopResolutions, materializeRawForFront } from './gm.js';
 
 export async function run(rawInput, callbacks = {}) {
   const { onStageStart, onStageDone } = callbacks;
@@ -160,6 +160,9 @@ export async function runStar(factRows, callbacks = {}) {
   stages.ssm = {
     status: row ? 'done' : 'stopped', recordConcept, roleResolutions,
     outcome: row && row.outcome, roleDefects: (row && row.roleDefects) || [], capMarkers: (row && row.capMarkers) || [],
+    // SNOWFLAKE: the descent IS a resolution operation -- surface the per-order hop outcomes in the resolution
+    // panel (the hint promises "resolution follows a dimension's own declared FK one level further").
+    hopResolutions: starHopResolutions(resolved, factRows), sampleSize: factRows.length,
   };
   onStageDone?.('ssm', stages.ssm);
 

@@ -65,5 +65,18 @@ ok(objOf('fdata:ShipInfo/SI1', 'fan:hasCustomer')[0] === 'fdata:Customer/C1', 'd
     'divergence guard (negative): the hop does NOT attach to a declared-entityClass node the star never minted (correct-by-coincidence avoided)');
 }
 
+// === RESOLUTION-PANEL REPRESENTATION (the descent IS a resolution operation, so it is surfaced as hop
+// RESOLUTIONS the SSM panel renders -- not only in the final graph). The four outcomes + the coreference flag are
+// legible in the resolution layer; this gates that the demo depicts the snowflake resolution the hint advertises. ===
+const hr = stages.ssm.hopResolutions || [];
+ok(hr.length === 4 && stages.ssm.sampleSize === 4, 'resolution panel: 4 hop resolutions surfaced (one per order), sampleSize 4');
+const byOrder = Object.fromEntries(hr.map((h) => [h.orderId, h]));
+ok(byOrder[10] && byOrder[10].outcome === 'resolved' && byOrder[10].resolvedKey === 'C1' && byOrder[10].coreferent === true,
+  'resolution panel: ord-10 hop resolved -> C1, flagged COREFERENT (ship-to = the orderer)');
+ok(byOrder[11] && byOrder[11].outcome === 'resolved' && byOrder[11].resolvedKey === 'C2' && byOrder[11].coreferent === false,
+  'resolution panel: ord-11 hop resolved -> C2, DISTINCT (not coreferent)');
+ok(byOrder[12] && byOrder[12].outcome === 'absent', 'resolution panel: ord-12 hop absent (NULL) -> nothing');
+ok(byOrder[13] && byOrder[13].outcome === 'dangling' && byOrder[13].reason === 'broken-ref', 'resolution panel: ord-13 hop dangling broken-ref -> UnresolvedRole');
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
