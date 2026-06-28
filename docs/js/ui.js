@@ -164,7 +164,8 @@ const callbacks = {
         const n = st.sampleSize || 1;
         if (n > 1) body.appendChild(note('This sample is ' + n + ' structurally-identical star orders (all 9 roles '
           + 'resolve); the star resolution + shared-core adjudication is shown for the first (representative). They '
-          + 'differ ONLY in the snowflake hop below, shown for all ' + n + ' -- which the graph then materializes.', 'edge-note'));
+          + 'differ ONLY in their ship_info row (and thus the snowflake hop below), shown for all ' + n + ' -- which '
+          + 'the graph then materializes.', 'edge-note'));
         body.appendChild(note('Snowflake hop ' + EMDASH + ' resolution follows the dimension\'s OWN declared FK one '
           + 'declared level further (ship_info.customer_key -> customer_dim). The intermediary\'s own FK resolves by '
           + 'the SAME primitive, one level deeper -- the four per-subject outcomes:'));
