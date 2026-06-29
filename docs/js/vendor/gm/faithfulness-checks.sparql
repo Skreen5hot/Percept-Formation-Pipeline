@@ -5,7 +5,7 @@
 # read the actual triples. Covers the STRUCTURAL honesty negatives; the law-relative completeness checks (Pin 7,
 # the §3a.2 multi-dangler) live in the JS suite (they need the law/RCR, not the instance graph).
 
-PREFIX fan:   <https://fnsr.dev/fan#>
+PREFIX fan:   <https://fandaws.dev/concept/>
 PREFIX fsdd:  <https://fnsr.dev/fsdd#>
 PREFIX fdata: <https://fnsr.dev/data/>
 PREFIX rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#>

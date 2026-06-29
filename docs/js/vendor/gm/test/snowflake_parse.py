@@ -11,7 +11,7 @@ import rdflib
 g = rdflib.Graph()
 g.parse(sys.argv[1], format="turtle")
 
-FAN = rdflib.Namespace("https://fnsr.dev/fan#")
+FAN = rdflib.Namespace("https://fandaws.dev/concept/")
 FSDD = rdflib.Namespace("https://fnsr.dev/fsdd#")
 D = rdflib.Namespace("https://fnsr.dev/data/")
 RDF = rdflib.RDF

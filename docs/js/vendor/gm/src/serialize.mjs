@@ -1,5 +1,5 @@
 export const PREFIXES = {
-  fan: 'https://fnsr.dev/fan#',
+  fan: 'https://fandaws.dev/concept/',   // the Fandaws concept ontology (matches actofordering_law.ttl); was fnsr.dev/fan# (a prefix bug -- emitted class IRIs did not link to the TBox)
   fsdd: 'https://fnsr.dev/fsdd#',
   fdata: 'https://fnsr.dev/data/',
   iao: 'https://fnsr.dev/iao#',
