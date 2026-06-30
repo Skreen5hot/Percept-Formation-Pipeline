@@ -20,8 +20,8 @@ if (has('vendor/ssm/src/snowflakeTraversal.mjs')) {
   const ofk = mapping['ssm:dimensions']['ship_info']['ssm:outgoingFKs'];
   assert(Array.isArray(ofk) && ofk.length === 1, 'P-extra-S3: ship_info carries ssm:outgoingFKs (the input the traversal reads)');
   const e0 = ofk[0];
-  assert(e0['ssm:fkColumn'] === 'customer_key' && e0['ssm:refTable'] === 'customer_dim' && e0['ssm:role'] === 'hasCustomer',
-    'P-extra-S3: the hop is customer_key -> customer_dim as hasCustomer');
+  assert(e0['ssm:fkColumn'] === 'customer_key' && e0['ssm:refTable'] === 'customer_dim' && e0['ssm:role'] === 'hasShipToParty',
+    'P-extra-S3: the hop is customer_key -> customer_dim as hasShipToParty');
   assert(e0['ssm:nullable'] === true, 'P-extra-S3: the hop is ssm:nullable:true (declares the ship-to ACCIDENTAL; pins it out of the deferred constitutive-deep case)');
   // SAME-SHAPE discriminating check: outgoingFKs uses the SAME field names as ssm:roleAssignments (no parallel convention)
   const faKeys = Object.keys(factRoleAssignmentSample).sort();
@@ -29,7 +29,7 @@ if (has('vendor/ssm/src/snowflakeTraversal.mjs')) {
   assert(JSON.stringify(faKeys) === JSON.stringify(ofkKeys),
     'P-extra-S3 SAME-SHAPE: an outgoingFKs entry uses the SAME field names as a fact roleAssignment (+ ssm:nullable) -- not a parallel convention');
   assert(!('concept' in e0) && !('ssm:concept' in e0), 'P-extra-S3: concept is NOT stored inline (it is DERIVED from refTable -> entityClass)');
-  assert(mapping['ssm:dimensions'][e0['ssm:refTable']]['ssm:entityClass'] === 'fan:Customer', 'P-extra-S3: the concept is DERIVABLE from refTable -> ssm:entityClass');
+  assert(mapping['ssm:dimensions'][e0['ssm:refTable']]['ssm:entityClass'] === 'fan:Party', 'P-extra-S3: the concept is DERIVABLE from refTable -> ssm:entityClass');
 
   // === Pin 6: reuse the star primitive -- traversal re-exports the SAME resolveKey (no second resolver) ===
   assert(hopResolver === resolveKey, 'Pin 6: traversal re-exports the SAME resolveKey the star front uses (engine-reuse, not a fork)');
@@ -39,7 +39,7 @@ if (has('vendor/ssm/src/snowflakeTraversal.mjs')) {
   // === §3 resolved (coreferent): one hop, resolved to C1, concept DERIVED, nullable carried ===
   const hr = hopsOf('resolved_coreferent');
   assert(hr.length === 1 && hr[0].outcome === 'resolved' && hr[0].resolvedKey === 'C1', '§3: resolved hop -> outcome resolved, resolvedKey C1');
-  assert(hr[0].role === 'hasCustomer' && hr[0].concept === 'fan:Customer' && hr[0].nullable === true, '§3: the hop record carries role + DERIVED concept (fan:Customer) + nullable');
+  assert(hr[0].role === 'hasShipToParty' && hr[0].concept === 'fan:Party' && hr[0].nullable === true, '§3: the hop record carries role + DERIVED concept (fan:Party) + nullable');
 
   // === §3 divergent: resolved to C2 (a different witnessed key) ===
   assert(hopsOf('resolved_divergent')[0].resolvedKey === 'C2', '§3: divergent hop resolves to C2');

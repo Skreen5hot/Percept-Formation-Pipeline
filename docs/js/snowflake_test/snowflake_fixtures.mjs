@@ -21,10 +21,10 @@ export const mapping = {
       'ssm:entityClass': 'fan:ShipInfo',
       'ssm:businessKey': 'ship_info_key',
       'ssm:outgoingFKs': [
-        { 'ssm:fkColumn': 'customer_key', 'ssm:refTable': 'customer_dim', 'ssm:role': 'hasCustomer', 'ssm:nullable': true },
+        { 'ssm:fkColumn': 'customer_key', 'ssm:refTable': 'customer_dim', 'ssm:role': 'hasShipToParty', 'ssm:nullable': true },   // #1/#5/#6: the hop DESIGNATES the consignee (ICE -> Agent), not has-agent on a region
       ],
     },
-    customer_dim: { 'ssm:entityClass': 'fan:Customer', 'ssm:businessKey': 'customer_key' }, // a leaf: no outgoingFKs
+    customer_dim: { 'ssm:entityClass': 'fan:Party', 'ssm:coType': 'cco:ont00001180', 'ssm:businessKey': 'customer_key' }, // a leaf: no outgoingFKs; #4 Party bearer + Organization co-type
   },
 };
 

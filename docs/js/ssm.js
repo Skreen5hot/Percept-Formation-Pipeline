@@ -16,7 +16,7 @@ import { stripToStandards } from './vendor/fsdd/src/standardsPure.mjs';
 // A representative Northwind warehouse star: orders_fact (a 9-role star -- date_dim is role-played x3:
 // orderOccupies CONSTITUTIVE vs required/shippedOccupies ACCIDENTAL) adjudicated against the REAL compiled
 // fan:ActOfOrdering law (the signed Phase-2 partition). Surrogate keys; business keys carried as attributes.
-const D = (bk) => ({ id: bk, businessKey: bk, content: {}, validFrom: '2024-01-01', validTo: null, assertedAt: '2024-01-01' });
+const D = (bk, content = {}) => ({ id: bk, businessKey: bk, content, validFrom: '2024-01-01', validTo: null, assertedAt: '2024-01-01' });
 // A ship_info record carries its OWN declared FK value (customer_key) in content -- the snowflake hop reads it.
 const SI = (bk, customer_key) => ({ id: bk, businessKey: bk, content: { customer_key }, validFrom: '2024-01-01', validTo: null, assertedAt: '2024-01-01' });
 const DIMS = {
@@ -25,10 +25,12 @@ const DIMS = {
   // ship_info -> customer_dim is the declared SNOWFLAKE hop (ship_info.customer_key, nullable). SI1 ship-to = the
   // orderer C1 (coreference); SI9 ship-to C2 (divergent); SI2 NULL (absent -> nothing); SI3 9999 (dangling).
   ship_info: [SI('SI1', 'C1'), SI('SI9', 'C2'), SI('SI2', null), SI('SI3', '9999')],
-  date_dim: [D('D-ORD'), D('D-REQ'), D('D-SHP')],
+  // S7: each date_dim row carries its OWN witnessed date (DISTINCT values) so M can hang fan:dateValue on the
+  // per-act fan:Date individual (Decision-D -- the source order_date was previously DROPPED).
+  date_dim: [D('D-ORD', { date: '1996-07-04' }), D('D-REQ', { date: '1996-08-01' }), D('D-SHP', { date: '1996-07-10' })],
 };
 const RA = [
-  { 'ssm:fkColumn': 'customer_key', 'ssm:refTable': 'customer_dim', 'ssm:role': 'hasCustomer' },
+  { 'ssm:fkColumn': 'customer_key', 'ssm:refTable': 'customer_dim', 'ssm:role': 'hasOrderer' },   // #6: the orderer is the act's agent (has-agent-clean); split from the ship-to
   { 'ssm:fkColumn': 'product_key', 'ssm:refTable': 'product_dim', 'ssm:role': 'hasProduct' },
   { 'ssm:fkColumn': 'order_date_key', 'ssm:refTable': 'date_dim', 'ssm:role': 'orderOccupies' },
   { 'ssm:fkColumn': 'employee_key', 'ssm:refTable': 'employee_dim', 'ssm:role': 'hasEmployee' },
@@ -39,17 +41,23 @@ const RA = [
   { 'ssm:fkColumn': 'shipped_date_key', 'ssm:refTable': 'date_dim', 'ssm:role': 'shippedOccupies' },
 ];
 const DIMDEFS = {
-  customer_dim: { 'ssm:entityClass': 'fan:Customer', 'ssm:businessKey': 'customer_key' },
+  // #4 ROLE-AS-KIND re-grounding: every party node denotes an Agent BEARER (fan:Party subClassOf cco:Agent), the
+  // only sound SHARED supertype. M co-types each node with its WITNESSED kind (ssm:coType, emitted in S6):
+  // cco:ont00001180 Organization for customer/supplier/shipper, cco:ont00001262 Person for employee. The old
+  // frozen kinds (fan:Customer/Supplier/Shipper/Employee) are RETIRED -- they were anti-rigid roles as rigid kinds.
+  customer_dim: { 'ssm:entityClass': 'fan:Party', 'ssm:coType': 'cco:ont00001180', 'ssm:businessKey': 'customer_key' },
   product_dim: { 'ssm:entityClass': 'fan:Product', 'ssm:businessKey': 'product_key' },
-  employee_dim: { 'ssm:entityClass': 'fan:Employee', 'ssm:businessKey': 'employee_key' },
-  supplier_dim: { 'ssm:entityClass': 'fan:Supplier', 'ssm:businessKey': 'supplier_key' },
-  shipper_dim: { 'ssm:entityClass': 'fan:Shipper', 'ssm:businessKey': 'shipper_key' },
+  employee_dim: { 'ssm:entityClass': 'fan:Party', 'ssm:coType': 'cco:ont00001262', 'ssm:businessKey': 'employee_key' },
+  supplier_dim: { 'ssm:entityClass': 'fan:Party', 'ssm:coType': 'cco:ont00001180', 'ssm:businessKey': 'supplier_key' },
+  shipper_dim: { 'ssm:entityClass': 'fan:Party', 'ssm:coType': 'cco:ont00001180', 'ssm:businessKey': 'shipper_key' },
   ship_info: {
     'ssm:entityClass': 'fan:ShipInfo', 'ssm:businessKey': 'ship_info_key',
     // SNOWFLAKE (S3): the dimension's OWN declared FK -- same field names as ssm:roleAssignments + the
     // genuinely-new ssm:nullable; the relatum concept is DERIVED from refTable -> ssm:entityClass (never inline).
+    // #1/#5/#6: the hop is a DESIGNATION of the ICE (ship_info hasShipToParty -> consignee), NOT has-agent on a
+    // region -- so the role is hasShipToParty; refTable stays customer_dim so the hop concept is fan:Party.
     'ssm:outgoingFKs': [
-      { 'ssm:fkColumn': 'customer_key', 'ssm:refTable': 'customer_dim', 'ssm:role': 'hasCustomer', 'ssm:nullable': true },
+      { 'ssm:fkColumn': 'customer_key', 'ssm:refTable': 'customer_dim', 'ssm:role': 'hasShipToParty', 'ssm:nullable': true },
     ],
   },
   date_dim: { 'ssm:entityClass': 'fan:Date', 'ssm:businessKey': 'date_key' },

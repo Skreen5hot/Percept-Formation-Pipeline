@@ -20,8 +20,9 @@ export function traverse({ subjectRefTable, subjectRow, mapping, dimsData, query
       assertionHorizon: query.assertionHorizon
     });
     const concept = mapping['ssm:dimensions'][refTable]['ssm:entityClass'];
+    const cotype = mapping['ssm:dimensions'][refTable]['ssm:coType'];   // S3/S6: the consignee's witnessed CCO kind (cco:Organization), co-typed on resolve
 
-    const base = { role, fkColumn: fk, refTable, concept, nullable };
+    const base = { role, fkColumn: fk, refTable, concept, cotype, nullable };
 
     if (r.state === 'resolved') {
       return { ...base, outcome: 'resolved', resolvedKey: r.businessKey };

@@ -42,7 +42,7 @@ function constitutiveSet(recordConcept) {
   if (frame && frame.roles && frame.roles.some(r => typeof r.constitutive === 'boolean')) {
     return new Set(frame.roles.filter(r => r.constitutive === true).map(r => localName(r.role)));
   }
-  return new Set(['hasCustomer', 'hasProduct', 'orderOccupies']); // the signed Phase-2 partition (fallback)
+  return new Set(['hasOrderer', 'hasProduct', 'orderOccupies']); // the signed Phase-2 partition (fallback; live path reads LAW.rcr)
 }
 function deriveMapping() {
   const ssm = STAR_NORTHWIND.ssm;
@@ -55,6 +55,7 @@ function deriveMapping() {
     role: ra['ssm:role'],
     column: ra['ssm:fkColumn'],
     concept: (dims[ra['ssm:refTable']] || {})['ssm:entityClass'],
+    cotype: (dims[ra['ssm:refTable']] || {})['ssm:coType'],   // S6: the witnessed CCO kind (Org/Person) M co-types the party node with
     constitutive: constitutive.has(localName(ra['ssm:role'])),
   }));
   return { recordConcept, factTable, roles };
@@ -67,8 +68,12 @@ export const M_MAPPING = deriveMapping();
 // the download serializes. Deterministic; never re-derives the SSM decision (it reads result.outcome and projects).
 export function materializeStar(resolved, factRows) {
   const results = (resolved && resolved.results) || [];
+  // S7: the witnessed date literal per date_dim row (businessKey -> date), threaded so M hangs fan:dateValue
+  // on each per-act fan:Date individual (the source date is otherwise dropped).
+  const dateByKey = Object.fromEntries(((STAR_NORTHWIND.dimsData || {}).date_dim || [])
+    .map((r) => [r.businessKey, r.content && r.content.date]).filter(([, v]) => v != null));
   const perRow = results.map((result, i) => {
-    const out = materialize(result, M_MAPPING, factRows[i] || {});
+    const out = materialize(result, M_MAPPING, factRows[i] || {}, dateByKey);
     return { row: factRows[i] || {}, outcome: result.outcome, triples: out.triples };
   });
   const triples = perRow.flatMap((r) => r.triples);

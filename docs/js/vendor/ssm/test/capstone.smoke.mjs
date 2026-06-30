@@ -13,7 +13,7 @@ const DIMS = {
   shipper_dim: [D('SH1')], ship_info: [D('SI1')], date_dim: [D('D-ORD'), D('D-REQ'), D('D-SHP')],
 };
 const RA = [
-  { 'ssm:fkColumn': 'customer_key', 'ssm:refTable': 'customer_dim', 'ssm:role': 'hasCustomer' },
+  { 'ssm:fkColumn': 'customer_key', 'ssm:refTable': 'customer_dim', 'ssm:role': 'hasOrderer' },   // #6 re-grounding: the orderer is the act's agent
   { 'ssm:fkColumn': 'product_key', 'ssm:refTable': 'product_dim', 'ssm:role': 'hasProduct' },
   { 'ssm:fkColumn': 'order_date_key', 'ssm:refTable': 'date_dim', 'ssm:role': 'orderOccupies' },
   { 'ssm:fkColumn': 'employee_key', 'ssm:refTable': 'employee_dim', 'ssm:role': 'hasEmployee' },
@@ -24,11 +24,11 @@ const RA = [
   { 'ssm:fkColumn': 'shipped_date_key', 'ssm:refTable': 'date_dim', 'ssm:role': 'shippedOccupies' },
 ];
 const DIMDEFS = {
-  customer_dim: { 'ssm:entityClass': 'fan:Customer', 'ssm:businessKey': 'customer_key' },
+  customer_dim: { 'ssm:entityClass': 'fan:Party', 'ssm:coType': 'cco:ont00001180', 'ssm:businessKey': 'customer_key' },   // #4: all parties collapse to fan:Party (Agent bearer) + witnessed co-type
   product_dim: { 'ssm:entityClass': 'fan:Product', 'ssm:businessKey': 'product_key' },
-  employee_dim: { 'ssm:entityClass': 'fan:Employee', 'ssm:businessKey': 'employee_key' },
-  supplier_dim: { 'ssm:entityClass': 'fan:Supplier', 'ssm:businessKey': 'supplier_key' },
-  shipper_dim: { 'ssm:entityClass': 'fan:Shipper', 'ssm:businessKey': 'shipper_key' },
+  employee_dim: { 'ssm:entityClass': 'fan:Party', 'ssm:coType': 'cco:ont00001262', 'ssm:businessKey': 'employee_key' },
+  supplier_dim: { 'ssm:entityClass': 'fan:Party', 'ssm:coType': 'cco:ont00001180', 'ssm:businessKey': 'supplier_key' },
+  shipper_dim: { 'ssm:entityClass': 'fan:Party', 'ssm:coType': 'cco:ont00001180', 'ssm:businessKey': 'shipper_key' },
   ship_info: { 'ssm:entityClass': 'fan:ShipInfo', 'ssm:businessKey': 'ship_info_key' },
   date_dim: { 'ssm:entityClass': 'fan:Date', 'ssm:businessKey': 'date_key' },
 };
@@ -63,8 +63,8 @@ assert(cf.every((f) => (f['fsdd:taintDerivation'] || []).every((s) => /^structur
   'provenance (F1): every field carries structured-source (FK-resolution) provenance');
 assert(cd['fsdd:datasetTaint'] === 'L1', 'taint level (F1): clean structured-source resolution is L1, not a spurious L2');
 for (const [col, role, relatum, fulfilled] of [
-  ['customer_key', 'hasCustomer', 'fan:Customer', true], ['product_key', 'hasProduct', 'fan:Product', true], ['order_date_key', 'orderOccupies', 'fan:Date', true],
-  ['employee_key', 'hasEmployee', 'fan:Employee', false], ['supplier_key', 'hasSupplier', 'fan:Supplier', false], ['shipper_key', 'hasShipper', 'fan:Shipper', false],
+  ['customer_key', 'hasOrderer', 'fan:Party', true], ['product_key', 'hasProduct', 'fan:Product', true], ['order_date_key', 'orderOccupies', 'fan:Date', true],
+  ['employee_key', 'hasEmployee', 'fan:Party', false], ['supplier_key', 'hasSupplier', 'fan:Party', false], ['shipper_key', 'hasShipper', 'fan:Party', false],
   ['ship_info_key', 'hasShipInfo', 'fan:ShipInfo', false], ['required_date_key', 'requiredOccupies', 'fan:Date', false], ['shipped_date_key', 'shippedOccupies', 'fan:Date', false],
 ]) {
   const f = byCol[col];

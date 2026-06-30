@@ -1,86 +1,74 @@
 export default {
   "@type": "w2fuel:CompiledLaw",
-  "source": "actofordering_law.ttl",
+  "source": "actofordering_law-remediation-proposal.ttl",
   "classes": [
+    "cco:ont00000005",
+    "cco:ont00000487",
+    "cco:ont00000686",
+    "cco:ont00001017",
+    "cco:ont00001180",
+    "cco:ont00001262",
     "fan:ActOfOrdering",
-    "fan:Customer",
+    "fan:CustomerRole",
     "fan:Date",
-    "fan:Employee",
+    "fan:Party",
     "fan:Product",
     "fan:ShipInfo",
-    "fan:Shipper",
-    "fan:Supplier",
-    "http://purl.obolibrary.org/obo/BFO_0000008",
-    "https://www.commoncoreontologies.org/ont00000005",
-    "https://www.commoncoreontologies.org/ont00000472",
-    "https://www.commoncoreontologies.org/ont00000995",
-    "https://www.commoncoreontologies.org/ont00001017",
-    "https://www.commoncoreontologies.org/ont00001180",
-    "https://www.commoncoreontologies.org/ont00001262"
+    "obo:BFO_0000008",
+    "obo:BFO_0000023",
+    "obo:BFO_0000040"
   ],
   "subClassOf": {
     "fan:ActOfOrdering": [
-      "https://www.commoncoreontologies.org/ont00000005"
+      "cco:ont00000005"
     ],
-    "fan:Customer": [
-      "https://www.commoncoreontologies.org/ont00001017"
+    "fan:Party": [
+      "cco:ont00001017"
+    ],
+    "fan:CustomerRole": [
+      "obo:BFO_0000023"
     ],
     "fan:Product": [
-      "https://www.commoncoreontologies.org/ont00000995"
-    ],
-    "fan:Employee": [
-      "https://www.commoncoreontologies.org/ont00001262"
-    ],
-    "fan:Supplier": [
-      "https://www.commoncoreontologies.org/ont00001180"
-    ],
-    "fan:Shipper": [
-      "https://www.commoncoreontologies.org/ont00001180"
-    ],
-    "fan:ShipInfo": [
-      "https://www.commoncoreontologies.org/ont00000472"
+      "obo:BFO_0000040"
     ],
     "fan:Date": [
-      "http://purl.obolibrary.org/obo/BFO_0000008"
+      "obo:BFO_0000008"
+    ],
+    "fan:ShipInfo": [
+      "cco:ont00000686"
     ]
   },
   "subClassOfClosure": {
     "fan:ActOfOrdering": [
-      "https://www.commoncoreontologies.org/ont00000005"
+      "cco:ont00000005"
     ],
-    "fan:Customer": [
-      "https://www.commoncoreontologies.org/ont00001017"
+    "fan:Party": [
+      "cco:ont00001017"
+    ],
+    "fan:CustomerRole": [
+      "obo:BFO_0000023"
     ],
     "fan:Product": [
-      "https://www.commoncoreontologies.org/ont00000995"
-    ],
-    "fan:Employee": [
-      "https://www.commoncoreontologies.org/ont00001262"
-    ],
-    "fan:Supplier": [
-      "https://www.commoncoreontologies.org/ont00001180"
-    ],
-    "fan:Shipper": [
-      "https://www.commoncoreontologies.org/ont00001180"
-    ],
-    "fan:ShipInfo": [
-      "https://www.commoncoreontologies.org/ont00000472"
+      "obo:BFO_0000040"
     ],
     "fan:Date": [
-      "http://purl.obolibrary.org/obo/BFO_0000008"
+      "obo:BFO_0000008"
+    ],
+    "fan:ShipInfo": [
+      "cco:ont00000686"
     ]
   },
   "disjointWith": {},
   "properties": {
-    "fan:hasCustomer": {
+    "fan:hasEmployee": {
       "domain": "fan:ActOfOrdering",
-      "range": "fan:Customer",
+      "range": "cco:ont00001017",
       "fillerKind": "reference",
       "multiplicity": "one"
     },
-    "fan:hasEmployee": {
+    "fan:hasOrderer": {
       "domain": "fan:ActOfOrdering",
-      "range": "fan:Employee",
+      "range": "cco:ont00001017",
       "fillerKind": "reference",
       "multiplicity": "one"
     },
@@ -96,35 +84,43 @@ export default {
       "fillerKind": "reference",
       "multiplicity": "one"
     },
+    "fan:hasShipToParty": {
+      "domain": "fan:ShipInfo",
+      "range": "cco:ont00001017"
+    },
     "fan:hasShipper": {
       "domain": "fan:ActOfOrdering",
-      "range": "fan:Shipper",
+      "range": "cco:ont00001180",
       "fillerKind": "reference",
       "multiplicity": "one"
     },
     "fan:hasSupplier": {
       "domain": "fan:ActOfOrdering",
-      "range": "fan:Supplier",
+      "range": "cco:ont00001180",
       "fillerKind": "reference",
       "multiplicity": "one"
     },
     "fan:orderOccupies": {
       "domain": "fan:ActOfOrdering",
       "range": "fan:Date",
-      "fillerKind": "literal",
+      "fillerKind": "reference",
       "multiplicity": "one",
-      "inherence": true
+      "ownTime": true
     },
     "fan:requiredOccupies": {
       "domain": "fan:ActOfOrdering",
       "range": "fan:Date",
-      "fillerKind": "literal",
+      "fillerKind": "reference",
       "multiplicity": "one"
+    },
+    "fan:shipToLocation": {
+      "domain": "fan:ShipInfo",
+      "range": "cco:ont00000487"
     },
     "fan:shippedOccupies": {
       "domain": "fan:ActOfOrdering",
       "range": "fan:Date",
-      "fillerKind": "literal",
+      "fillerKind": "reference",
       "multiplicity": "one"
     }
   },
@@ -132,8 +128,8 @@ export default {
     "fan:ActOfOrdering": {
       "roles": [
         {
-          "role": "hasCustomer",
-          "relatumType": "fan:Customer",
+          "role": "hasOrderer",
+          "relatumType": "cco:ont00001017",
           "fillerKind": "reference",
           "constitutive": true,
           "multiplicity": "one"
@@ -148,7 +144,7 @@ export default {
         {
           "role": "orderOccupies",
           "relatumType": "fan:Date",
-          "fillerKind": "literal",
+          "fillerKind": "reference",
           "constitutive": true,
           "multiplicity": "one"
         }
@@ -158,7 +154,7 @@ export default {
   "rcr": {
     "fan:ActOfOrdering": {
       "constitutive": [
-        "fan:hasCustomer",
+        "fan:hasOrderer",
         "fan:hasProduct",
         "fan:orderOccupies"
       ],

@@ -3,6 +3,9 @@ export const PREFIXES = {
   fsdd: 'https://fnsr.dev/fsdd#',
   fdata: 'https://fnsr.dev/data/',
   iao: 'https://fnsr.dev/iao#',
+  obo: 'http://purl.obolibrary.org/obo/',          // S4: BFO ids (role/realized-in: obo:BFO_xxxx) for the role layer (S6)
+  cco: 'https://www.commoncoreontologies.org/',     // S4: CCO co-types (Organization/Person/Agent: cco:ont0000xxxx)
+  xsd: 'http://www.w3.org/2001/XMLSchema#',          // S4: datatype IRIs for typed literals (xsd:date on fan:dateValue, S7)
   rdf: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
 };
 
@@ -27,7 +30,17 @@ export function toTurtle(triples) {
   for (const { s, p, o, lit } of triples) {
     const subject = termToTurtle(s);
     const predicate = p === 'rdf:type' ? 'a' : termToTurtle(p);
-    const object = lit ? JSON.stringify(o) : termToTurtle(o);
+    // S4 THIRD BRANCH: a typed literal arrives as { value, datatype } (an object, not a string) -> emit
+    // "value"^^prefix:local. Detected BEFORE the lit/IRI branches so a non-string object never reaches
+    // termToTurtle (which would throw on .indexOf). datatype is a prefixed term (e.g. xsd:date).
+    let object;
+    if (o !== null && typeof o === 'object' && 'value' in o) {
+      object = JSON.stringify(String(o.value)) + '^^' + termToTurtle(o.datatype);
+    } else if (lit) {
+      object = JSON.stringify(o);
+    } else {
+      object = termToTurtle(o);
+    }
     lines.push(`${subject} ${predicate} ${object} .`);
   }
   return lines.join('\n');
