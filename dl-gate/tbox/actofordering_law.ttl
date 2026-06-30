@@ -1,0 +1,124 @@
+# Act of Ordering -- BFO/CCO REMEDIATION, SIGNED LOGIC (Workstream T). HermiT/ROBOT-proven consistent (the AFTER
+# run: a conformant ABox + this TTL + the full vendored CCO -> CONSISTENT, 0 unsatisfiable). Every cco:/obo: id
+# verified against the vendored register. This file is the TARGET grounding; it is NOT live until the PFP system
+# (M) is rebuilt to EMIT per the "M MUST" shapes (Workstream S) AND the companion fsdd: grounding lands AND the
+# Phase-0 ABox+TBox+CCO DL gate passes. Findings closed (logic): #1,#2,#4,#5,#6, rcr:inherence, Product, accidental-anchors.
+#
+# EXPLICIT DEFERRALS (scoped out of this logic file, by design):
+#  - #3 (gap-record range-coercion): the TBox cannot fix it; M MUST re-seat fsdd: gap-records OFF fan: range slots
+#    onto a dedicated decoupled meta-property. TRACKED DEPENDENCY: once fsdd: is grounded as ICE, the Phase-0 gate
+#    DETONATES on the current ABoxes until M re-seats -- so the gate stays RED until Workstream S lands this.
+#  - #9 / sec-4.A party identity: M still mints fan:Party straight from the witnessed key (no designator layer).
+#    "defensible-but-costly," not a Tier-1/2 logical defect; DEFERRED (out of scope for this logic file).
+#  - the four fulfillment roles (ShipTo/Supplier/Shipper/Employee): NOT modeled -- they would be realized in
+#    delivery/supply/shipping/employment occurrents the order frame does not contain. Re-introduce ONLY when those
+#    occurrents are modeled (couples to Decision-C). The parties are routed by their relations (below) without a role.
+
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix obo:  <http://purl.obolibrary.org/obo/> .
+@prefix cco:  <https://www.commoncoreontologies.org/> .
+@prefix fan:  <https://fandaws.dev/concept/> .
+@prefix rcr:  <https://schema.fnsr.dev/rcr/v1#> .
+
+# ============================================================ BFO/CCO anchors (all ids verified) ===
+cco:ont00000005 a owl:Class .   # Act
+cco:ont00001017 a owl:Class .   # Agent
+cco:ont00001262 a owl:Class .   # Person
+cco:ont00001180 a owl:Class .   # Organization
+cco:ont00000686 a owl:Class .   # Designative Information Content Entity   (#5)
+cco:ont00000487 a owl:Class .   # Geospatial Location                      (#5)
+obo:BFO_0000023 a owl:Class .   # role                                     (#4)
+obo:BFO_0000008 a owl:Class .   # temporal region
+obo:BFO_0000040 a owl:Class .   # material entity                          (#audit, Product relax)
+# relations reused (verified): cco:ont00001833 has-agent (dom Process, rng Agent) | cco:ont00001778 has-object |
+#   cco:ont00001916 designates (ICE->Entity) | cco:ont00001808 is-about | cco:ont00001921 has-input (dom Process, rng admits GDC) |
+#   obo:BFO_0000057 has-participant | obo:BFO_0000199 occupies-temporal-region (FUNCTIONAL) |
+#   obo:BFO_0000196 bearer-of (bearer->role) | obo:BFO_0000054 has-realization (role->process)
+
+# ============================================================ the frame ===
+fan:ActOfOrdering a owl:Class ; rdfs:label "Act of Ordering" ; rdfs:subClassOf cco:ont00000005 .   # KEEP -- sound.
+
+# ============================================================ #4 ROLE-AS-KIND: bearers are Agents; ONE role on bfo:role ===
+# WAS: fan:Customer/Supplier/Shipper/Employee subClassOf Agent/Person/Organization (anti-rigid role frozen as a rigid kind).
+# NOW: a party NODE denotes the BEARER (an Agent the warehouse witnessed). [DECISION-A RECORDED] fan:Party subClassOf
+#      Agent (the only sound SHARED supertype -- it also types employee-Persons; Organization would mis-type them).
+#      M co-types each node with its witnessed kind: cco:Organization for Customer/Supplier/Shipper dims, cco:Person for Employee.
+fan:Party a owl:Class ; rdfs:subClassOf cco:ont00001017 ; rdfs:label "Party (agent bearer)" .
+
+# Only the ORDERER's customer-role has its realizing occurrent IN-FRAME (it is realized in THIS ordering act). The other
+# four party-roles are routed by their relations directly (no role class) -- see the DEFERRAL note in the header.
+fan:CustomerRole a owl:Class ; rdfs:subClassOf obo:BFO_0000023 ; rdfs:label "Customer Role" .
+# M MUST (orderer ONLY): mint the orderer node a fan:Party (co-typed cco:Organization); mint a role node a fan:CustomerRole;
+#        emit  orderer obo:BFO_0000196 customerRole ;  customerRole obo:BFO_0000054 actOfOrdering .  (borne by the orderer,
+#        realized in THIS act). hasOrderer (below) + CustomerRole are COMPLEMENTARY, not redundant: the direct has-agent
+#        participation AND the role layer -- the canonical pattern. Do NOT assert realized-in for any other party.
+
+# ============================================================ relatum kinds ===
+fan:Product  a owl:Class ; rdfs:subClassOf obo:BFO_0000040 ; rdfs:label "Product" .   # #audit: RELAXED from Material Artifact
+fan:Date     a owl:Class ; rdfs:subClassOf obo:BFO_0000008 ; rdfs:label "Date (temporal region)" .
+# #5: ShipInfo is an information artifact (an address+consignee designation), NOT a place. This is what forced #1.
+# It is a COMPOSITE Designative ICE: the consignee designation rides on ShipName, the place designation on the address
+# (optionally split into two ICEs later). Designative ICE is the right genus.
+fan:ShipInfo a owl:Class ; rdfs:subClassOf cco:ont00000686 ; rdfs:label "Ship-to designation (Designative ICE)" .
+
+# datatype carrier for the date literal (Decision-D): the source order_date value, hung on the per-act fan:Date individual.
+fan:dateValue a owl:DatatypeProperty ; rdfs:label "date value" ; rdfs:domain fan:Date ; rdfs:range xsd:date .
+
+# ============================================================ CONSTITUTIVE relations -- the request ===
+# #6 SPLIT the orderer from the ship-to. The ORDERER is the act's agent (has-agent -- sound; orderer subject = Act = process).
+fan:hasOrderer a owl:ObjectProperty ; rdfs:label "has orderer" ; rdfs:subPropertyOf cco:ont00001833 ;   # has agent (VERIFIED dom Process / rng Agent)
+    rdfs:domain fan:ActOfOrdering ; rdfs:range cco:ont00001017 ;
+    rcr:constitutiveOf fan:ActOfOrdering ; rcr:fillerKind "reference" ; rcr:multiplicity "one" .
+fan:hasProduct a owl:ObjectProperty ; rdfs:label "has product" ; rdfs:subPropertyOf cco:ont00001778 ;   # has object (VERIFIED)
+    rdfs:domain fan:ActOfOrdering ; rdfs:range fan:Product ;
+    rcr:constitutiveOf fan:ActOfOrdering ; rcr:fillerKind "reference" ; rcr:multiplicity "one" .
+fan:orderOccupies a owl:ObjectProperty ; rdfs:label "order occupies" ; rdfs:subPropertyOf obo:BFO_0000199 ;   # occupies (FUNCTIONAL) -- the act's OWN time
+    rdfs:domain fan:ActOfOrdering ; rdfs:range fan:Date ;
+    rcr:constitutiveOf fan:ActOfOrdering ; rcr:fillerKind "reference" ; rcr:multiplicity "one" ; rcr:ownTime true .  # #inherence: rcr:inherence -> rcr:ownTime
+
+# ============================================================ #1/#5/#6 THE SHIP-TO HOP -- NOT has-agent ===
+# WAS: fan:hasCustomer (subProp has-agent) on a Geospatial-Region subject -> region forced to be a process -> OWL-INCONSISTENT.
+# NOW: the ShipInfo ADDRESS ICE DESIGNATES the consignee agent (designates: ICE -> Entity -- no process domain; HermiT-clean),
+#      and is_about a Geospatial Location. NO rcr: act-modality here -- this is a relation OF THE ICE, not a role of the act
+#      (the order's accidental ship-to branch is fan:hasShipInfo, below, which carries the modality).
+fan:hasShipToParty a owl:ObjectProperty ; rdfs:label "ship-to party" ; rdfs:subPropertyOf cco:ont00001916 ;   # designates (VERIFIED)
+    rdfs:domain fan:ShipInfo ; rdfs:range cco:ont00001017 .
+fan:shipToLocation a owl:ObjectProperty ; rdfs:label "ship-to location" ; rdfs:subPropertyOf cco:ont00001808 ;   # is about (VERIFIED)
+    rdfs:domain fan:ShipInfo ; rdfs:range cco:ont00000487 .
+# M MUST: emit the consignee as a fan:Party (co-typed cco:Organization); the hop edge is  shipInfoICE hasShipToParty party
+#        (designates), NEVER hasCustomer on a region subject; emit  shipInfoICE shipToLocation geoLocation .
+
+# ============================================================ ACCIDENTAL relations -- fulfillment ===
+# #audit: anchor at has-participant (the honest minimum); hasEmployee ALSO at has-agent (Employee IS an Agent -- was under-grounded).
+# No EmployeeRole/SupplierRole/ShipperRole: those parties are routed by these relations (see header deferral).
+fan:hasEmployee a owl:ObjectProperty ; rdfs:label "has employee" ; rdfs:subPropertyOf cco:ont00001833 ;   # has agent (Person)
+    rdfs:domain fan:ActOfOrdering ; rdfs:range cco:ont00001017 ;
+    rcr:accidentalOf fan:ActOfOrdering ; rcr:fillerKind "reference" ; rcr:multiplicity "one" .
+fan:hasSupplier a owl:ObjectProperty ; rdfs:label "has supplier" ; rdfs:subPropertyOf obo:BFO_0000057 ;   # has participant (Organization, not an asserted Agent)
+    rdfs:domain fan:ActOfOrdering ; rdfs:range cco:ont00001180 ;
+    rcr:accidentalOf fan:ActOfOrdering ; rcr:fillerKind "reference" ; rcr:multiplicity "one" .
+fan:hasShipper a owl:ObjectProperty ; rdfs:label "has shipper" ; rdfs:subPropertyOf obo:BFO_0000057 ;   # has participant
+    rdfs:domain fan:ActOfOrdering ; rdfs:range cco:ont00001180 ;
+    rcr:accidentalOf fan:ActOfOrdering ; rcr:fillerKind "reference" ; rcr:multiplicity "one" .
+# [DECISION-B RECORDED] the order CONSUMES the ship-to address as INPUT: hasShipInfo subProp cco:has-input (dom Process, range
+# admits GDC; ShipInfo subClassOf Designative ICE subClassOf GDC -- domain/range valid, HermiT-clean). This is the order's
+# accidental ship-to branch (carries the rcr modality).
+fan:hasShipInfo a owl:ObjectProperty ; rdfs:label "has ship-to address" ; rdfs:subPropertyOf cco:ont00001921 ;   # has input (VERIFIED)
+    rdfs:domain fan:ActOfOrdering ; rdfs:range fan:ShipInfo ;
+    rcr:accidentalOf fan:ActOfOrdering ; rcr:fillerKind "reference" ; rcr:multiplicity "one" .
+# [DECISION-C RECORDED: KEEP un-anchored; distinct-occurrent model DEFERRED] required/shipped dates are the times of OTHER
+# occurrents -- do NOT subproperty the act's FUNCTIONAL occupies (that entails D-ORD = D-REQ = D-SHP). fan:Date on the range
+# still types the relata. Re-anchor (to delivery/shipping occurrents that occupy their own time) only as future work.
+fan:requiredOccupies a owl:ObjectProperty ; rdfs:label "required by date" ;   # NOT subPropertyOf BFO_0000199 (#2)
+    rdfs:domain fan:ActOfOrdering ; rdfs:range fan:Date ;
+    rcr:accidentalOf fan:ActOfOrdering ; rcr:fillerKind "reference" ; rcr:multiplicity "one" .
+fan:shippedOccupies a owl:ObjectProperty ; rdfs:label "shipped date" ;   # NOT subPropertyOf BFO_0000199 (#2)
+    rdfs:domain fan:ActOfOrdering ; rdfs:range fan:Date ;
+    rcr:accidentalOf fan:ActOfOrdering ; rcr:fillerKind "reference" ; rcr:multiplicity "one" .
+
+# [DECISION-D RECORDED: region individual + per-act literal] M MUST mint a DISTINCT fan:Date individual PER ACT (keyed by the
+# act, NOT the calendar value -- closing the #G shared-Date co-temporality bug), carrying the source order_date via fan:dateValue
+# (currently DROPPED -- a data-loss bug to fix in the same pass). orderOccupies range is a temporal-region CLASS, so a literal
+# cannot fill it; datatype-only would force dropping the occupies grounding -- hence region individual + hung literal.

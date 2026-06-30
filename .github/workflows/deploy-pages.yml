@@ -38,6 +38,19 @@ jobs:
         run: node docs/js/vendor/ssm/test/capstone.smoke.mjs
       - name: runStar verify (functional layer)
         run: node docs/js/vendor/ssm/test/runstar.verify.mjs
+      # --- BFO/CCO remediation shape pins (the re-grounded law + mapping + emitted graph) ---
+      - name: Law-shape pin (the compiled law matches the signed BFO/CCO re-grounding)
+        run: node docs/js/vendor/law/actofordering_law.shape.test.mjs
+      - name: Mapping-shape pin (hasOrderer/fan:Party + the split ship-to hop; the groundedConcept flow)
+        run: node docs/js/ssm.mapping.shape.test.mjs
+      - name: GM #3 re-seat pin (gap-records ride fsdd: meta-properties, never a fan: slot)
+        run: node docs/js/vendor/gm/test/gm.reseat.test.mjs
+      - name: GM role-layer pin (party co-typing + the orderer's CustomerRole realized-in the act)
+        run: node docs/js/vendor/gm/test/gm.rolelayer.test.mjs
+      - name: GM per-act dates pin (distinct fan:Date per act + witnessed fan:dateValue)
+        run: node docs/js/vendor/gm/test/gm.dates.test.mjs
+      - name: DL FLOOR (fast every-push gate -- #3 structural lint + referential integrity over the live bytes)
+        run: node docs/js/vendor/gm/test/gm.dlfloor.test.mjs
       - name: GM output-fidelity (the materialized graph's claims read against the emitted triples)
         run: node docs/js/vendor/gm/test/gm.verify.mjs
       - name: Set up Python (a REAL RDF parser for the published graph)
@@ -58,6 +71,8 @@ jobs:
           python -c "import rdflib, sys; g = rdflib.Graph(); g.parse('gm-raw-graph.ttl', format='turtle'); print('rdflib parsed', len(g), 'triples'); sys.exit(0 if len(g) > 0 else 1)"
       - name: Snowflake front output-fidelity (the ship_info -> customer hop's four outcomes in the live emitted graph)
         run: node docs/js/vendor/gm/test/snowflake.verify.mjs
+      - name: Snowflake hop shape pin (designates-clean hop, coreferent + divergent consignees, dangling re-seated)
+        run: node docs/js/vendor/gm/test/gm.snowflakehop.test.mjs
       - name: Snowflake unit pins (the traversal + materializer primitives, in isolation)
         run: node docs/js/snowflake_test/run.mjs
       - name: Snowflake real-parse (the live hop graph MUST parse in rdflib AND carry the four outcomes in the bytes)

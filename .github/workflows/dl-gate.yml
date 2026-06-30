@@ -1,0 +1,52 @@
+name: Phase-0 OWL-DL gate (deep, periodic)
+
+# The HEAVY BFO/CCO conformance gate -- ROBOT + HermiT over the full CCO import -- run over every live PFP
+# honesty-ladder ABox (clean / ice / orphan / snowflake) against the vendored signed TBoxes (dl-gate/tbox/).
+# This is SEPARATE from the deploy audit on purpose: the every-push protection is the fast DL FLOOR
+# (docs/js/vendor/gm/test/gm.dlfloor.test.mjs, #3 + referential integrity, milliseconds). This deep gate is the
+# periodic / on-demand check the review prescribed (the reasoner exploits continuant/occurrent disjointness the
+# floor cannot). It does NOT block the deploy; a RED here is a signal to the coordinator.
+#
+# CCO PROVISIONING (maintainer decision): set the repo variable CCO_TTL_URL to a stable CommonCoreOntologies
+# merged-Turtle URL (download), OR commit the merged file and point CCO_TTL_URL at a raw repo path. The job
+# FAILS LOUDLY if CCO is not provisioned -- it never silently passes without the reasoner running.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * 1'   # weekly, Monday 06:00 UTC
+
+permissions:
+  contents: read
+
+jobs:
+  dl-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Set up Java (ROBOT/HermiT)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Download ROBOT
+        run: |
+          curl -L -o robot.jar https://github.com/ontodev/robot/releases/latest/download/robot.jar
+          test -s robot.jar
+      - name: Provision CCO (merged Turtle)
+        env:
+          CCO_TTL_URL: ${{ vars.CCO_TTL_URL }}
+        run: |
+          if [ -z "${CCO_TTL_URL}" ]; then
+            echo "::error::CCO_TTL_URL repo variable is not set -- cannot run the DL gate without CommonCoreOntologiesMerged.ttl."
+            echo "Set it to a stable CCO merged-Turtle URL (Settings -> Variables), or vendor the file and point at its raw path."
+            exit 2
+          fi
+          curl -L -o cco.ttl "${CCO_TTL_URL}"
+          test -s cco.ttl
+      - name: Run the Phase-0 DL gate over all four ABoxes
+        run: |
+          ROBOT_JAR="$PWD/robot.jar" CCO_TTL="$PWD/cco.ttl" bash dl-gate/run-dl-gate.sh

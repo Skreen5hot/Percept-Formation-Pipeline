@@ -1,0 +1,80 @@
+# FSDD honesty-layer vocabulary -- CONSOLIDATED & ICE-GROUNDED. The SINGLE deployable fsdd: TBox.
+#
+# Supersedes BOTH:
+#   * tbox/fsdd-vocabulary.ttl        (the WAS-state -- RETIRED; do not load)
+#   * fsdd-grounding-proposal.ttl     (the delta + rationale -- keep for the record, do not also load)
+# Ship ONLY this file as the fsdd: TBox. Co-loading the WAS re-declares concernsType (ObjectProperty) and role
+# (DatatypeProperty) against the AnnotationProperty forms below = an OWL-DL punning violation; the Phase-0 gate's
+# profile check catches it. Every cco:/obo: id VERIFIED against vendor/cco; the grounding is reasoner-proven
+# (rationale + the DO-NOT-DEPLOY-BEFORE-M-RESEATING sequencing live in fsdd-grounding-proposal.ttl).
+#
+# !! DEPLOY WITH Workstream S's #3 re-seating IN THE SAME RELEASE: grounding the records subClassOf ICE makes
+#    each a GDC; while M still places a gap-record in a fan: RANGE slot the merged ABox is INCONSISTENT.
+
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix cco:  <https://www.commoncoreontologies.org/> .
+@prefix fan:  <https://fandaws.dev/concept/> .
+@prefix fsdd: <https://fnsr.dev/fsdd#> .
+
+fsdd: a owl:Ontology ;
+    rdfs:label "FSDD honesty-layer vocabulary (consolidated, ICE-grounded)" ;
+    rdfs:comment "Records the outcome of resolution as first-class information rather than dropping or fabricating it. Grounded as Descriptive ICE (cco:ont00000853). Single deployable fsdd: TBox; supersedes tbox/fsdd-vocabulary.ttl and fsdd-grounding-proposal.ttl." .
+
+# ===================== record classes -- grounded subClassOf cco:ont00000853 Descriptive ICE =====================
+# 853 (VERIFIED) = ICE that "describes some Entity"; subClassOf cco:ont00000958 ICE subClassOf obo:BFO_0000031 GDC.
+# These records DESCRIBE an epistemic state (an absence, a broken ref, an exclusion, a projection step) -> the
+# principled genus per the GOLDEN PRINCIPLE. (Base ICE cco:ont00000958 is the documented floor; 853 ⊑ 958.)
+fsdd:ImplicitEntityRecord a owl:Class ; rdfs:subClassOf cco:ont00000853 ;
+    rdfs:label "Implicit Entity Record" ;
+    rdfs:comment "A record that a CONSTITUTIVE role's filler is absent/unwitnessed -- an ICE ABOUT the missing relatum. NEVER an instance of the missing type (names the type via fsdd:concernsType; does not assert membership)." .
+fsdd:UnresolvedRole a owl:Class ; rdfs:subClassOf cco:ont00000853 ;
+    rdfs:label "Unresolved Role" ;
+    rdfs:comment "A record that a role's relatum was REFERENCED but did not resolve (broken/dangling reference), kept IN the graph as information about the gap; NEVER an instance of the type it failed to find." .
+fsdd:ExcludedFrame a owl:Class ; rdfs:subClassOf cco:ont00000853 ;
+    rdfs:label "Excluded Frame" ;
+    rdfs:comment "A record that a frame was excluded because a CONSTITUTIVE role dangled -- no valid domain frame was materialized. Carries fsdd:reason. Information about a refusal-to-assert. (Standalone -- never the object of any fan: property; the clean #3 pattern.)" .
+fsdd:ProjectionRecord a owl:Class ; rdfs:subClassOf cco:ont00000853 ;
+    rdfs:label "Projection Record" ;
+    rdfs:comment "A provenance record tying a materialized frame to its source FSDD manifest (content hash + transform version + projection rules). Information about the projection step." .
+
+# ===================== #3 re-seating meta-properties =====================
+# Attach a gap-record to the frame WITHOUT a fan: domain property. Range-typed to the record class; NO rdfs:domain;
+# NOT subPropertyOf has-participant/has-agent/occupies/any fan: property -- so no range entailment can coerce the
+# record into Date/Agent. DIRECTIONALITY: frame -> record (the record is the OBJECT). Global invariant: M must
+# NEVER place an fsdd: record in the object slot of ANY fan: property -- every absent/broken filler routes here.
+fsdd:hasImplicitEntity a owl:ObjectProperty ; rdfs:label "has implicit-entity gap" ;
+    rdfs:range fsdd:ImplicitEntityRecord ;
+    rdfs:comment "frame (or the subject that had the gap) -> the ImplicitEntityRecord for an absent CONSTITUTIVE filler. Replaces placing the record in any fan: object slot (#3)." .
+fsdd:hasUnresolvedRole a owl:ObjectProperty ; rdfs:label "has unresolved role" ;
+    rdfs:range fsdd:UnresolvedRole ;
+    rdfs:comment "frame (or the subject that had the gap) -> the UnresolvedRole for a broken/dangling reference. Replaces placing the record in any fan: object slot (#3)." .
+
+# ===================== honest aboutness witness =====================
+# cco:ont00001808 is-about: domain ICE (958), range Entity (BFO_0000001) -- VERIFIED. DIRECTIONALITY: record ->
+# frame (the RECORD is the subject; is-about's domain is ICE, so emitting act->act would re-type the act an ICE).
+fsdd:aboutFrame a owl:ObjectProperty ; rdfs:label "about frame" ;
+    rdfs:subPropertyOf cco:ont00001808 ;
+    rdfs:comment "record -> the materialized frame/act it is information ABOUT. ADDS the realist record->frame aboutness witness; use on ProjectionRecord too (projectedBy stays act->record and is verified consistent)." .
+
+# ===================== concernsType / role -- AnnotationProperty (SUPERSEDE the WAS ObjectProperty/DatatypeProperty) =====================
+fsdd:concernsType a owl:AnnotationProperty ; rdfs:label "concerns type" ;
+    rdfs:comment "The KIND the absent/broken filler would instantiate (value = the fan: class IRI, read lexically). No rdfs:range owl:Class (that reserved-vocabulary use was the OWL-Full smell). A typed gap-descriptor, NOT an assertion that such an instance exists, and NOT the record's realist aboutness (use fsdd:aboutFrame)." .
+fsdd:role a owl:AnnotationProperty ; rdfs:label "role" ;
+    rdfs:comment "The fan: object-property IRI the unresolved/absent reference was meant to fill (e.g. fan:hasOrderer, fan:orderOccupies) -- an IRI, uniform with concernsType (#4.G; supersedes the WAS string). M MUST emit the SIGNED property IRI, never the legacy fan:hasCustomer." .
+
+# ===================== kept literal / provenance properties (unchanged from the WAS) =====================
+fsdd:reason a owl:DatatypeProperty ; rdfs:label "reason" ; rdfs:range xsd:string ;
+    rdfs:comment "Why the reference did not resolve, e.g. \"broken-ref\" / \"temporal-nonoverlap\"; on an ExcludedFrame, names the constitutive dangler(s)." .
+fsdd:status a owl:DatatypeProperty ; rdfs:label "status" ; rdfs:range xsd:string ;
+    rdfs:comment "Witnessing status of a record's relatum, e.g. \"unwitnessed\". M SHOULD emit this deterministically on every record (the WAS-materializer did not always)." .
+fsdd:projectedBy a owl:ObjectProperty ; rdfs:label "projected by" ; rdfs:range fsdd:ProjectionRecord ;
+    rdfs:comment "Relates a materialized frame to its ProjectionRecord (provenance). Dedicated meta-property (range = ProjectionRecord) -- already #3-clean, no fan: property involved." .
+fsdd:sourceFsddHash a owl:DatatypeProperty ; rdfs:label "source FSDD hash" ; rdfs:range xsd:string ;
+    rdfs:comment "Content-address (sha256) of the source FSDD manifest the frame was projected from." .
+fsdd:transformVersion a owl:DatatypeProperty ; rdfs:label "transform version" ; rdfs:range xsd:string ;
+    rdfs:comment "Version of the projection M that produced the frame." .
+fsdd:projectionRules a owl:DatatypeProperty ; rdfs:label "projection rules" ; rdfs:range xsd:string ;
+    rdfs:comment "The outcome-partition rules applied (e.g. resolved+absent+broken)." .
