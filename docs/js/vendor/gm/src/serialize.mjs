@@ -3,7 +3,7 @@ export const PREFIXES = {
   fsdd: 'https://fnsr.dev/fsdd#',
   fdata: 'https://fnsr.dev/data/',
   iao: 'https://fnsr.dev/iao#',
-  obo: 'http://purl.obolibrary.org/obo/',          // S4: BFO ids (role/realized-in: obo:BFO_xxxx) for the role layer (S6)
+  obo: 'http://purl.obolibrary.org/obo/',          // S4: BFO ids (bearer-of / has-realization: obo:BFO_xxxx) for the role layer (S6)
   cco: 'https://www.commoncoreontologies.org/',     // S4: CCO co-types (Organization/Person/Agent: cco:ont0000xxxx)
   xsd: 'http://www.w3.org/2001/XMLSchema#',          // S4: datatype IRIs for typed literals (xsd:date on fan:dateValue, S7)
   rdf: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',

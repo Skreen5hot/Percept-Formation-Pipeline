@@ -94,13 +94,13 @@ export function materialize(result, mapping, factRow, dateByKey = {}) {
       // S6 party co-typing: the node is the fan:Party BEARER (via concept) co-typed with its WITNESSED kind
       // (cco:Organization / cco:Person). Only party dims carry role.cotype; product/date/shipInfo have none.
       if (role.cotype) type(e, role.cotype);
-      // S6 role layer (orderer ONLY -- signed: only the orderer's customer-role is realized IN this frame; the
-      // other parties are routed by their relations without a role until their occurrents are modeled, Decision-C).
+      // S6 role layer (orderer ONLY -- signed: only the orderer's customer-role has its realizing act IN this
+      // frame; the other parties are routed by their relations without a role until their occurrents are modeled, Decision-C).
       if (role.role === 'hasOrderer') {
         const rn = nodeIRI('role', frameKey, role.role);
         type(rn, 'fan:CustomerRole');
         push(e, 'obo:BFO_0000196', rn);   // orderer bearer-of the customer role
-        push(rn, 'obo:BFO_0000054', F);   // the role realized-in (has-realization) THIS act of ordering
+        push(rn, 'obo:BFO_0000054', F);   // BFO_0000054 HAS-REALIZATION: the role -> the act that realizes it (realizable -> process). The triple direction is correct; the inverse "realized in" is BFO_0000055.
       }
       continue;
     }
