@@ -7,9 +7,12 @@ name: Phase-0 OWL-DL gate (deep, periodic)
 # periodic / on-demand check the review prescribed (the reasoner exploits continuant/occurrent disjointness the
 # floor cannot). It does NOT block the deploy; a RED here is a signal to the coordinator.
 #
-# CCO PROVISIONING (maintainer decision): set the repo variable CCO_TTL_URL to a stable CommonCoreOntologies
-# merged-Turtle URL (download), OR commit the merged file and point CCO_TTL_URL at a raw repo path. The job
-# FAILS LOUDLY if CCO is not provisioned -- it never silently passes without the reasoner running.
+# CCO: vendored at dl-gate/vendor/cco/CommonCoreOntologiesMerged.ttl (the 2026-04-04 merged build WITH BFO
+# axioms inline -- 960 obo:BFO_ refs incl. the continuant/occurrent disjointness the gate exploits, and the
+# EXACT build the gate was validated GREEN against). The job uses it directly -- no external dependency. NB: the
+# upstream CCO "merged" release (v2.1) carries only ~77 BFO refs (BFO not fully merged), so pointing at it would
+# silently strip the disjointness; that is why CCO travels with the gate. Set repo var CCO_TTL_URL ONLY to
+# deliberately override with a different merged-Turtle source.
 
 on:
   workflow_dispatch:
@@ -36,17 +39,18 @@ jobs:
         run: |
           curl -L -o robot.jar https://github.com/ontodev/robot/releases/latest/download/robot.jar
           test -s robot.jar
-      - name: Provision CCO (merged Turtle)
+      - name: Provision CCO (vendored merged Turtle, BFO inline)
         env:
           CCO_TTL_URL: ${{ vars.CCO_TTL_URL }}
         run: |
-          if [ -z "${CCO_TTL_URL}" ]; then
-            echo "::error::CCO_TTL_URL repo variable is not set -- cannot run the DL gate without CommonCoreOntologiesMerged.ttl."
-            echo "Set it to a stable CCO merged-Turtle URL (Settings -> Variables), or vendor the file and point at its raw path."
-            exit 2
+          if [ -n "${CCO_TTL_URL}" ]; then
+            echo "CCO_TTL_URL override set -- downloading: ${CCO_TTL_URL}"
+            curl -L -o cco.ttl "${CCO_TTL_URL}"
+          else
+            cp dl-gate/vendor/cco/CommonCoreOntologiesMerged.ttl cco.ttl   # the validated build, BFO inline
           fi
-          curl -L -o cco.ttl "${CCO_TTL_URL}"
           test -s cco.ttl
+          echo "CCO BFO refs: $(grep -c 'obo/BFO_' cco.ttl) (expect ~960 -- a low count means BFO is not merged)"
       - name: Run the Phase-0 DL gate over all four ABoxes
         run: |
           ROBOT_JAR="$PWD/robot.jar" CCO_TTL="$PWD/cco.ttl" bash dl-gate/run-dl-gate.sh

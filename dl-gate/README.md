@@ -29,5 +29,9 @@ Expected: **all four ABoxes GREEN** (OWL-DL, #3-clean, consistent, 0 unsatisfiab
 - **Every push:** the *fast* floor (`docs/js/vendor/gm/test/gm.dlfloor.test.mjs`, wired into `deploy-pages.yml`)
   runs the #3 structural lint + referential integrity in milliseconds — no reasoner.
 - **Periodic / on-demand:** `.github/workflows/dl-gate.yml` runs this deep gate (weekly + manual). It downloads
-  ROBOT; **set the repo variable `CCO_TTL_URL`** to a stable CCO merged-Turtle source. The job fails loudly if
-  CCO is not provisioned — it never silently passes without the reasoner.
+  ROBOT and uses the **vendored** CCO (`vendor/cco/CommonCoreOntologiesMerged.ttl`) directly — the gate is
+  self-contained, no external provisioning. CCO travels with the gate on purpose: the upstream "merged" release
+  (v2.1) carries BFO only by reference (~77 `obo:BFO_` refs), while the gate needs the full BFO axiomatization
+  (the `continuant ⟂ occurrent` disjointness, 960 refs) inline — so a URL to upstream would silently strip the
+  very disjointness this gate exploits. Set the repo variable `CCO_TTL_URL` only to deliberately override CCO
+  with a different merged-Turtle source.
